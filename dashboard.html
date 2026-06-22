@@ -16,17 +16,17 @@
         <h1>Multiplicadores Stor</h1>
     </div>
     <div class="nav">
-        <a href="index.html">Home</a>
-        <a href="dashboard.html">Dashboard</a>
-        <a href="ranking.html">Ranking</a>
-        <a href="#" id="logoutBtn">Sair</a>
+        <a href="index.html">&#x1F3E0; Home</a>
+        <a href="dashboard.html">&#x1F5E1; Missões</a>
+        <a href="ranking.html">&#x1F451; Ranking</a>
+        <a href="#" id="logoutBtn">&#x1F6AA; Sair</a>
     </div>
 
     <div class="container">
         <div id="flash"></div>
 
         <div class="highlight-card">
-            <h2>Em Destaque</h2>
+            <h2>&#x1F3F9; Em Destaque</h2>
             <div style="margin-top:15px">
                 <div class="stat">
                     <div class="stat-label">Nome</div>
@@ -44,7 +44,7 @@
         </div>
 
         <div class="card">
-            <h3>Lista das Atividades</h3>
+            <h3>&#x1F4DC; Lista das Missões</h3>
             <div id="activitiesList"></div>
         </div>
     </div>
@@ -83,8 +83,8 @@
                     html += `<div class="meta">
                         <form onsubmit="return handleToggle(event, '${act.id}')">
                             ${!act.completed
-                                ? '<button type="submit" class="btn btn-success btn-sm">Marcar como Voluntariado</button>'
-                                : '<button type="submit" class="btn btn-warning btn-sm">Desmarcar</button>'}
+                                ? '<button type="submit" class="btn btn-success btn-sm">Aceitar Missão</button>'
+                                : '<button type="submit" class="btn btn-warning btn-sm">Desfazer</button>'}
                         </form>
                     </div>`;
 
@@ -93,9 +93,9 @@
                         <form onsubmit="return handleToggle(event, '${act.id}')">
                             ${!act.completed
                                 ? `<input type="text" name="modulo" class="inline-input" placeholder="Nome do M\u00f3dulo/Sistema" required>
-                                   <button type="submit" class="btn btn-success btn-sm">Marcar</button>`
+                                   <button type="submit" class="btn btn-success btn-sm">Escolher</button>`
                                 : `<strong>M\u00f3dulo:</strong> ${act.modulo || '-'}
-                                   <button type="submit" class="btn btn-warning btn-sm" style="margin-left:10px">Desmarcar</button>`}
+                                   <button type="submit" class="btn btn-warning btn-sm" style="margin-left:10px">Desfazer</button>`}
                         </form>
                     </div>`;
 
@@ -104,9 +104,9 @@
                         <form onsubmit="return handleToggle(event, '${act.id}')">
                             ${!act.completed
                                 ? `<input type="date" name="data_inicio" class="inline-input" required>
-                                   <button type="submit" class="btn btn-success btn-sm">Iniciar os Estudos</button>`
+                                   <button type="submit" class="btn btn-success btn-sm">Iniciar Estudos</button>`
                                 : `<strong>Data de in\u00edcio:</strong> ${act.data_inicio || '-'}
-                                   <button type="submit" class="btn btn-warning btn-sm" style="margin-left:10px">Desmarcar</button>`}
+                                   <button type="submit" class="btn btn-warning btn-sm" style="margin-left:10px">Desfazer</button>`}
                         </form>
                     </div>`;
 
@@ -115,9 +115,9 @@
                         <form onsubmit="return handleToggle(event, '${act.id}')">
                             ${!act.completed
                                 ? `<input type="date" name="data_termino" class="inline-input" required>
-                                   <button type="submit" class="btn btn-success btn-sm">T\u00e9rmino dos Estudos</button>`
+                                   <button type="submit" class="btn btn-success btn-sm">Concluir Estudos</button>`
                                 : `<strong>Data de t\u00e9rmino:</strong> ${act.data_termino || '-'}
-                                   <button type="submit" class="btn btn-warning btn-sm" style="margin-left:10px">Desmarcar</button>`}
+                                   <button type="submit" class="btn btn-warning btn-sm" style="margin-left:10px">Desfazer</button>`}
                         </form>
                     </div>`;
 
@@ -128,7 +128,7 @@
                                 ? `<input type="date" name="data_conclusao" class="inline-input" required>
                                    <button type="submit" class="btn btn-success btn-sm">Concluir os Estudos</button>`
                                 : `<strong>Data de conclus\u00e3o:</strong> ${act.data_termino || '-'}
-                                   <button type="submit" class="btn btn-warning btn-sm" style="margin-left:10px">Desmarcar</button>`}
+                                   <button type="submit" class="btn btn-warning btn-sm" style="margin-left:10px">Desfazer</button>`}
                         </form>
                     </div>`;
 
@@ -137,9 +137,9 @@
                         <form onsubmit="return handleToggle(event, '${act.id}')">
                             ${!act.completed
                                 ? `<input type="date" name="data_inicio" class="inline-input" required>
-                                   <button type="submit" class="btn btn-success btn-sm">Iniciar Cria\u00e7\u00e3o de Material</button>`
+                                   <button type="submit" class="btn btn-success btn-sm">Forjar Material</button>`
                                 : `<strong>Data de in\u00edcio:</strong> ${act.data_inicio || '-'}
-                                   <button type="submit" class="btn btn-warning btn-sm" style="margin-left:10px">Desmarcar</button>`}
+                                   <button type="submit" class="btn btn-warning btn-sm" style="margin-left:10px">Desfazer</button>`}
                         </form>
                     </div>`;
 
@@ -148,9 +148,9 @@
                         <form onsubmit="return handleToggle(event, '${act.id}')">
                             ${!act.completed
                                 ? `<input type="date" name="data_termino" class="inline-input" required>
-                                   <button type="submit" class="btn btn-success btn-sm">Finalizar Cria\u00e7\u00e3o de Material</button>`
+                                   <button type="submit" class="btn btn-success btn-sm">Finalizar Material</button>`
                                 : `<strong>Data de t\u00e9rmino:</strong> ${act.data_termino || '-'}
-                                   <button type="submit" class="btn btn-warning btn-sm" style="margin-left:10px">Desmarcar</button>`}
+                                   <button type="submit" class="btn btn-warning btn-sm" style="margin-left:10px">Desfazer</button>`}
                         </form>
                     </div>
                     <div class="link-info">
@@ -158,7 +158,7 @@
                         ${act.link ? `<a href="${act.link}" target="_blank">${act.link}</a>` : ''}
                         <form onsubmit="return handleLink(event, '${act.id}')" style="margin-top:5px">
                             <input type="url" name="link" class="inline-input" placeholder="URL do material" value="${act.link || ''}" style="width:300px">
-                            <button type="submit" class="btn btn-primary btn-sm">Salvar Link</button>
+                            <button type="submit" class="btn btn-primary btn-sm">Registrar Artefato</button>
                         </form>
                     </div>`;
 
@@ -167,9 +167,9 @@
                         <form onsubmit="return handleToggle(event, '${act.id}')">
                             ${!act.completed
                                 ? `<input type="date" name="data_aula" class="inline-input" required>
-                                   <button type="submit" class="btn btn-success btn-sm">Aula Ministrada</button>`
+                                   <button type="submit" class="btn btn-success btn-sm">Registrar Aula</button>`
                                 : `<strong>Data da aula:</strong> ${act.data_termino || '-'}
-                                   <button type="submit" class="btn btn-warning btn-sm" style="margin-left:10px">Desmarcar</button>`}
+                                   <button type="submit" class="btn btn-warning btn-sm" style="margin-left:10px">Desfazer</button>`}
                         </form>
                     </div>`;
                 }
