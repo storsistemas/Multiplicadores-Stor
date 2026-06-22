@@ -1,4 +1,5 @@
-from flask import Flask, render_template, redirect, url_for, request, flash
+import os
+from flask import Flask, render_template, redirect, url_for, request, flash, send_from_directory
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from datetime import date
 from models import db, User, Activity
@@ -123,6 +124,10 @@ def logout():
     return redirect(url_for('login'))
 
 @app.route('/')
+def index():
+    return send_from_directory(os.path.dirname(os.path.abspath(__file__)), 'index.html')
+
+@app.route('/dashboard')
 @login_required
 def dashboard():
     activities = current_user.activities.all()
