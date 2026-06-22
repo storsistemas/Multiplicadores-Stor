@@ -74,8 +74,10 @@
             document.getElementById('userScore').textContent = profile.total_score + ' XP';
 
             const ranking = await getRanking();
-            const rankPos = ranking.findIndex(u => u.id === user.uid) + 1;
-            document.getElementById('userRank').textContent = '#' + (rankPos || '-');
+            const rankPos = profile.total_score > 0
+                ? '#' + (ranking.findIndex(u => u.id === user.uid) + 1)
+                : 'N/A';
+            document.getElementById('userRank').textContent = rankPos;
 
             const rank = getRank(profile.total_score);
             const nextRank = getNextRank(profile.total_score);

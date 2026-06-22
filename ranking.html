@@ -47,10 +47,17 @@
             users.forEach((u, i) => {
                 const li = document.createElement('li');
                 let posHtml;
-                if (i === 0) posHtml = '<span class="rank-medal">&#x1F947;</span>';
-                else if (i === 1) posHtml = '<span class="rank-medal">&#x1F948;</span>';
-                else if (i === 2) posHtml = '<span class="rank-medal">&#x1F949;</span>';
-                else posHtml = '#' + (i + 1);
+                if (u.total_score === 0) {
+                    posHtml = '<span style="color:#6b5b4a;">N/A</span>';
+                } else if (i === 0) {
+                    posHtml = '<span class="rank-medal">&#x1F947;</span>';
+                } else if (i === 1) {
+                    posHtml = '<span class="rank-medal">&#x1F948;</span>';
+                } else if (i === 2) {
+                    posHtml = '<span class="rank-medal">&#x1F949;</span>';
+                } else {
+                    posHtml = '#' + (i + 1);
+                }
 
                 const r = getRank(u.total_score);
                 const isMe = u.id === currentUserId;
