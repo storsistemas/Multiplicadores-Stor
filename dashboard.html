@@ -37,8 +37,8 @@
                     <div class="stat-value" id="userRank">#-</div>
                 </div>
                 <div class="stat">
-                    <div class="stat-label">Pontuação</div>
-                    <div class="stat-value" id="userScore">0 pts</div>
+                    <div class="stat-label">Experiência</div>
+                    <div class="stat-value" id="userScore">0 XP</div>
                 </div>
             </div>
         </div>
@@ -51,16 +51,6 @@
 
     <script>
         let currentUser = null;
-        let currentProfile = null;
-
-        function stepCompleted(steps, type) {
-            const s = steps.find(x => x.activity_type === type);
-            return s ? s.completed : false;
-        }
-
-        function stepData(steps, type) {
-            return steps.find(x => x.activity_type === type) || {};
-        }
 
         async function loadDashboard() {
             const user = await requireAuth();
@@ -70,15 +60,14 @@
             const profile = await getProfile(user.uid);
             if (!profile) {
                 document.getElementById('userName').textContent = 'Aventureiro';
-                document.getElementById('userScore').textContent = '0 pts';
+                document.getElementById('userScore').textContent = '0 XP';
                 document.getElementById('userRank').textContent = '#-';
                 document.getElementById('activitiesList').innerHTML =
-                    '<p class="text-center" style="padding:20px;color:#8a7a6a;">Perfil não encontrado. Crie uma nova conta.</p>';
+                    '<p class="text-center" style="padding:20px;color:#8a7a6a;">Perfil não encontrado.</p>';
                 return;
             }
-            currentProfile = profile;
             document.getElementById('userName').textContent = profile.name;
-            document.getElementById('userScore').textContent = profile.total_score + ' pts';
+            document.getElementById('userScore').textContent = profile.total_score + ' XP';
 
             const ranking = await getRanking();
             const rankPos = ranking.findIndex(u => u.id === user.uid) + 1;
@@ -94,27 +83,27 @@
             }
 
             for (const grupo of grupos) {
-                const allDone = grupo.steps.every(s => s.completed);
+                const s = grupo.steps[0];
+                if (!s) continue;
+                const done = s.completed;
                 const div = document.createElement('div');
-                div.className = 'activity-item' + (allDone ? ' completed' : '');
+                div.className = 'activity-item' + (done ? ' completed' : '');
 
-                let html = `<div class="title">${allDone ? '&#x2705;' : '&#x2B1C;'} ${grupo.label}</div>`;
+                let html = `<div class="title">${done ? '&#x2705;' : '&#x2B1C;'} ${grupo.label}</div>`;
 
                 if (grupo.type === 'voluntariar') {
-                    const s = grupo.steps[0];
                     html += `<div class="meta">
                         <form onsubmit="return handleToggle(event, '${s.id}', 'voluntariar')">
-                            ${!s.completed
+                            ${!done
                                 ? '<button type="submit" class="btn btn-success btn-sm">Aceitar Missão</button>'
                                 : '<button type="submit" class="btn btn-warning btn-sm">Desfazer</button>'}
                         </form>
                     </div>`;
 
                 } else if (grupo.type === 'escolher_modulo') {
-                    const s = grupo.steps[0];
                     html += `<div class="meta">
                         <form onsubmit="return handleToggle(event, '${s.id}', 'escolher_modulo')">
-                            ${!s.completed
+                            ${!done
                                 ? `<input type="text" name="modulo" class="inline-input" placeholder="Nome do Módulo/Sistema" required>
                                    <button type="submit" class="btn btn-success btn-sm">Escolher</button>`
                                 : `<strong>Módulo:</strong> ${s.modulo || '-'}
@@ -122,44 +111,21 @@
                         </form>
                     </div>`;
 
-                } else if (grupo.type === 'fase_estudo') {
-                    const ini = grupo.steps[0];
-                    const term = grupo.steps[1];
-                    html += `<div style="padding-left:15px;border-left:1px solid rgba(201,168,76,0.15);margin-top:8px;">`;
-
-                    if (ini) {
-                        html += `<div style="margin:8px 0;">
-                            <form onsubmit="return handleToggle(event, '${ini.id}', 'iniciar_estudos')">
-                                <strong>Iniciar os Estudos:</strong>
-                                ${!ini.completed
-                                    ? `<input type="date" name="data_inicio" class="inline-input" required>
-                                       <button type="submit" class="btn btn-success btn-sm">Iniciar</button>`
-                                    : `${ini.data_inicio || '-'}
-                                       <button type="submit" class="btn btn-warning btn-sm" style="margin-left:5px">Desfazer</button>`}
-                            </form>
-                        </div>`;
-                    }
-
-                    if (term) {
-                        html += `<div style="margin:8px 0;">
-                            <form onsubmit="return handleToggle(event, '${term.id}', 'terminar_estudos')">
-                                <strong>Término dos Estudos:</strong>
-                                ${!term.completed
-                                    ? `<input type="date" name="data_termino" class="inline-input" required>
-                                       <button type="submit" class="btn btn-success btn-sm">Finalizar</button>`
-                                    : `${term.data_termino || '-'}
-                                       <button type="submit" class="btn btn-warning btn-sm" style="margin-left:5px">Desfazer</button>`}
-                            </form>
-                        </div>`;
-                    }
-
-                    html += `</div>`;
+                } else if (grupo.type === 'iniciar_estudos') {
+                    html += `<div class="meta">
+                        <form onsubmit="return handleToggle(event, '${s.id}', 'iniciar_estudos')">
+                            ${!done
+                                ? `<input type="date" name="data_inicio" class="inline-input" required>
+                                   <button type="submit" class="btn btn-success btn-sm">Iniciar</button>`
+                                : `<strong>Data de início:</strong> ${s.data_inicio || '-'}
+                                   <button type="submit" class="btn btn-warning btn-sm" style="margin-left:10px">Desfazer</button>`}
+                        </form>
+                    </div>`;
 
                 } else if (grupo.type === 'concluir_estudos') {
-                    const s = grupo.steps[0];
                     html += `<div class="meta">
                         <form onsubmit="return handleToggle(event, '${s.id}', 'concluir_estudos')">
-                            ${!s.completed
+                            ${!done
                                 ? `<input type="date" name="data_conclusao" class="inline-input" required>
                                    <button type="submit" class="btn btn-success btn-sm">Concluir</button>`
                                 : `<strong>Data de conclusão:</strong> ${s.data_termino || '-'}
@@ -167,54 +133,40 @@
                         </form>
                     </div>`;
 
-                } else if (grupo.type === 'criar_material') {
-                    const ini = grupo.steps[0];
-                    const term = grupo.steps[1];
-                    html += `<div style="padding-left:15px;border-left:1px solid rgba(201,168,76,0.15);margin-top:8px;">`;
+                } else if (grupo.type === 'iniciar_material') {
+                    html += `<div class="meta">
+                        <form onsubmit="return handleToggle(event, '${s.id}', 'iniciar_material')">
+                            ${!done
+                                ? `<input type="date" name="data_inicio" class="inline-input" required>
+                                   <button type="submit" class="btn btn-success btn-sm">Iniciar</button>`
+                                : `<strong>Data de início:</strong> ${s.data_inicio || '-'}
+                                   <button type="submit" class="btn btn-warning btn-sm" style="margin-left:10px">Desfazer</button>`}
+                        </form>
+                    </div>`;
 
-                    if (ini) {
-                        html += `<div style="margin:8px 0;">
-                            <form onsubmit="return handleToggle(event, '${ini.id}', 'iniciar_material')">
-                                <strong>Início da Criação:</strong>
-                                ${!ini.completed
-                                    ? `<input type="date" name="data_inicio" class="inline-input" required>
-                                       <button type="submit" class="btn btn-success btn-sm">Iniciar</button>`
-                                    : `${ini.data_inicio || '-'}
-                                       <button type="submit" class="btn btn-warning btn-sm" style="margin-left:5px">Desfazer</button>`}
-                            </form>
-                        </div>`;
-                    }
-
-                    if (term) {
-                        html += `<div style="margin:8px 0;">
-                            <form onsubmit="return handleToggle(event, '${term.id}', 'terminar_material')">
-                                <strong>Término da Criação:</strong>
-                                ${!term.completed
-                                    ? `<input type="date" name="data_termino" class="inline-input" required>
-                                       <button type="submit" class="btn btn-success btn-sm">Finalizar</button>`
-                                    : `${term.data_termino || '-'}
-                                       <button type="submit" class="btn btn-warning btn-sm" style="margin-left:5px">Desfazer</button>`}
-                            </form>
-                        </div>`;
-                    }
-
-                    html += `</div>`;
-
-                    const linkAct = term || ini;
-                    html += `<div class="link-info">
+                } else if (grupo.type === 'material_aprovado') {
+                    html += `<div class="meta">
+                        <form onsubmit="return handleToggle(event, '${s.id}', 'material_aprovado')">
+                            ${!done
+                                ? `<input type="date" name="data_inicio" class="inline-input" required>
+                                   <button type="submit" class="btn btn-success btn-sm">Aprovar Material</button>`
+                                : `<strong>Data de aprovação:</strong> ${s.data_inicio || '-'}
+                                   <button type="submit" class="btn btn-warning btn-sm" style="margin-left:10px">Desfazer</button>`}
+                        </form>
+                    </div>
+                    <div class="link-info">
                         <strong>Link do Material:</strong>
-                        ${linkAct && linkAct.link ? `<a href="${linkAct.link}" target="_blank">${linkAct.link}</a>` : ''}
-                        <form onsubmit="return handleLink(event, '${linkAct ? linkAct.id : ''}')" style="margin-top:5px">
-                            <input type="url" name="link" class="inline-input" placeholder="URL do material" value="${linkAct && linkAct.link || ''}" style="width:300px">
-                            <button type="submit" class="btn btn-primary btn-sm">Registrar Artefato</button>
+                        ${s.link ? `<a href="${s.link}" target="_blank">${s.link}</a>` : ''}
+                        <form onsubmit="return handleLink(event, '${s.id}')" style="margin-top:5px">
+                            <input type="url" name="link" class="inline-input" placeholder="URL do material para avaliação" value="${s.link || ''}" style="width:300px">
+                            <button type="submit" class="btn btn-primary btn-sm">Enviar para Revisão</button>
                         </form>
                     </div>`;
 
                 } else if (grupo.type === 'ministrar_aula') {
-                    const s = grupo.steps[0];
                     html += `<div class="meta">
                         <form onsubmit="return handleToggle(event, '${s.id}', 'ministrar_aula')">
-                            ${!s.completed
+                            ${!done
                                 ? `<input type="date" name="data_aula" class="inline-input" required>
                                    <button type="submit" class="btn btn-success btn-sm">Registrar Aula</button>`
                                 : `<strong>Data da aula:</strong> ${s.data_termino || '-'}
@@ -253,16 +205,10 @@
                 updates.modulo = completed ? modulo : null;
             }
 
-            if (activityType === 'iniciar_estudos' || activityType === 'iniciar_material') {
+            if (['iniciar_estudos', 'iniciar_material', 'material_aprovado'].includes(activityType)) {
                 const data = fd.get('data_inicio');
-                if (!completed && !data) return showError('Informe a data de início');
+                if (!completed && !data) return showError('Informe a data');
                 updates.data_inicio = completed ? data : null;
-            }
-
-            if (activityType === 'terminar_estudos' || activityType === 'terminar_material') {
-                const data = fd.get('data_termino');
-                if (!completed && !data) return showError('Informe a data de término');
-                updates.data_termino = completed ? data : null;
             }
 
             if (activityType === 'concluir_estudos') {
@@ -294,7 +240,7 @@
             if (!link) return showError('Informe o link do material.');
             try {
                 await updateLink(activityId, link);
-                showSuccess('Artefato registrado!');
+                showSuccess('Material enviado para revisão!');
                 loadDashboard();
             } catch (err) {
                 showError(err.message);

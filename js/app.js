@@ -3,34 +3,34 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 db.settings({ merge: true });
 
+// Valores ocultos do usuário
 const PONTOS = {
-    voluntariar: 10,
-    escolher_modulo: 10,
-    iniciar_estudos: 10,
-    terminar_estudos: 10,
-    concluir_estudos: 30,
-    iniciar_material: 20,
-    terminar_material: 20,
-    ministrar_aula: 50,
+    voluntariar: 100,
+    escolher_modulo: 100,
+    iniciar_estudos: 50,
+    concluir_estudos: 100,
+    iniciar_material: 50,
+    material_aprovado: 250,
+    ministrar_aula: 150,
 };
 
 const ATIVIDADES = [
-    { type: 'voluntariar', label: 'Voluntariar-se para um Módulo' },
+    { type: 'voluntariar', label: 'Voluntariar-se para o Projeto' },
     { type: 'escolher_modulo', label: 'Escolheu um Módulo/Sistema' },
-    { type: 'iniciar_estudos', label: 'Iniciar os Estudos' },
-    { type: 'terminar_estudos', label: 'Término dos Estudos' },
-    { type: 'concluir_estudos', label: 'Concluir os Estudos' },
-    { type: 'iniciar_material', label: 'Início da Criação do Material Didático' },
-    { type: 'terminar_material', label: 'Término da Criação do Material Didático' },
+    { type: 'iniciar_estudos', label: 'Iniciar Fase de Estudo' },
+    { type: 'concluir_estudos', label: 'Concluir Fase de Estudo' },
+    { type: 'iniciar_material', label: 'Iniciando a Criação do Material Didático' },
+    { type: 'material_aprovado', label: 'Material Aprovado (Revisão)' },
     { type: 'ministrar_aula', label: 'Ministrar Treinamento' },
 ];
 
 const GRUPOS = [
-    { type: 'voluntariar', label: 'Voluntariar-se para um Módulo', steps: ['voluntariar'] },
+    { type: 'voluntariar', label: 'Voluntariar-se para o Projeto', steps: ['voluntariar'] },
     { type: 'escolher_modulo', label: 'Escolheu um Módulo/Sistema', steps: ['escolher_modulo'] },
-    { type: 'fase_estudo', label: 'Fase de Estudo', steps: ['iniciar_estudos', 'terminar_estudos'] },
+    { type: 'iniciar_estudos', label: 'Iniciar Fase de Estudo', steps: ['iniciar_estudos'] },
     { type: 'concluir_estudos', label: 'Concluir Fase de Estudo', steps: ['concluir_estudos'] },
-    { type: 'criar_material', label: 'Criação de Material Didático', steps: ['iniciar_material', 'terminar_material'] },
+    { type: 'iniciar_material', label: 'Iniciando a Criação do Material Didático', steps: ['iniciar_material'] },
+    { type: 'material_aprovado', label: 'Material Aprovado (Revisão)', steps: ['material_aprovado'] },
     { type: 'ministrar_aula', label: 'Ministrar Treinamento', steps: ['ministrar_aula'] },
 ];
 

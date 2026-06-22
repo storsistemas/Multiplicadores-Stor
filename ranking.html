@@ -40,7 +40,7 @@
             list.innerHTML = '';
 
             if (users.length === 0) {
-                list.innerHTML = '<p class="text-center">Nenhum participante cadastrado ainda.</p>';
+                list.innerHTML = '<p class="text-center">Nenhum aventureiro cadastrado ainda.</p>';
                 return;
             }
 
@@ -57,7 +57,7 @@
                     <span class="pos">${posHtml}</span>
                     <span class="name">${u.name}</span>
                     <span class="score">
-                        ${u.total_score} pts
+                        ${u.total_score} XP
                         ${isMe ? '<span class="badge badge-warning">Voc\u00ea</span>' : ''}
                     </span>
                 `;
