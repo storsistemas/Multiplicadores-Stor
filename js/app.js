@@ -1,6 +1,7 @@
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
+db.settings({ merge: true });
 
 const PONTOS = {
     voluntariar: 10,
@@ -24,6 +25,15 @@ const ATIVIDADES = [
     { type: 'ministrar_aula', label: 'Ministrar Treinamento' },
 ];
 
+const GRUPOS = [
+    { type: 'voluntariar', label: 'Voluntariar-se para um Módulo', steps: ['voluntariar'] },
+    { type: 'escolher_modulo', label: 'Escolheu um Módulo/Sistema', steps: ['escolher_modulo'] },
+    { type: 'fase_estudo', label: 'Fase de Estudo', steps: ['iniciar_estudos', 'terminar_estudos'] },
+    { type: 'concluir_estudos', label: 'Concluir Fase de Estudo', steps: ['concluir_estudos'] },
+    { type: 'criar_material', label: 'Criação de Material Didático', steps: ['iniciar_material', 'terminar_material'] },
+    { type: 'ministrar_aula', label: 'Ministrar Treinamento', steps: ['ministrar_aula'] },
+];
+
 // ============ AUTH ============
 
 async function register(name, email, password) {
@@ -45,7 +55,6 @@ async function register(name, email, password) {
             modulo: null,
             link: null,
             pontos: 0,
-            created_at: firebase.firestore.FieldValue.serverTimestamp(),
         });
     }
     await batch.commit();
@@ -76,54 +85,56 @@ async function getRanking() {
 
 // ============ ACTIVITIES ============
 
-async function getActivities(userId) {
+async function ensureActivities(userId) {
     const snap = await db.collection('activities')
         .where('user_id', '==', userId)
-        .orderBy('created_at')
+        .get();
+
+    const existing = new Set(snap.docs.map(d => d.data().activity_type));
+
+    const batch = db.batch();
+    let added = 0;
+    for (const a of ATIVIDADES) {
+        if (!existing.has(a.type)) {
+            const ref = db.collection('activities').doc();
+            batch.set(ref, {
+                user_id: userId,
+                activity_type: a.type,
+                completed: false,
+                data_inicio: null,
+                data_termino: null,
+                modulo: null,
+                link: null,
+                pontos: 0,
+            });
+            added++;
+        }
+    }
+    if (added > 0) await batch.commit();
+    return added;
+}
+
+async function getActivities(userId) {
+    await ensureActivities(userId);
+
+    const snap = await db.collection('activities')
+        .where('user_id', '==', userId)
         .get();
 
     const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    return ATIVIDADES
-        .map(a => data.find(d => d.activity_type === a.type))
-        .filter(Boolean);
+    return GRUPOS.map(g => ({
+        ...g,
+        steps: g.steps.map(t => data.find(d => d.activity_type === t)).filter(Boolean),
+    })).filter(g => g.steps.length > 0);
 }
 
-async function toggleActivity(activity, formData) {
-    const updates = { completed: !activity.completed };
-    updates.pontos = updates.completed ? (PONTOS[activity.activity_type] || 0) : 0;
+async function toggleStep(activityId, completed, updates) {
+    const data = { completed, pontos: completed ? updates.pontos : 0 };
+    if (updates.data_inicio !== undefined) data.data_inicio = updates.data_inicio;
+    if (updates.data_termino !== undefined) data.data_termino = updates.data_termino;
+    if (updates.modulo !== undefined) data.modulo = updates.modulo;
 
-    if (activity.activity_type === 'escolher_modulo') {
-        const modulo = formData.get('modulo');
-        if (!activity.completed && !modulo) throw new Error('Informe o nome do Módulo/Sistema');
-        updates.modulo = activity.completed ? null : modulo;
-    }
-
-    if (['iniciar_estudos', 'iniciar_material'].includes(activity.activity_type)) {
-        const data = formData.get('data_inicio');
-        if (!activity.completed && !data) throw new Error('Informe a data de início');
-        updates.data_inicio = data || null;
-    }
-
-    if (['terminar_estudos', 'terminar_material'].includes(activity.activity_type)) {
-        const data = formData.get('data_termino');
-        if (!activity.completed && !data) throw new Error('Informe a data de término');
-        updates.data_termino = data || null;
-    }
-
-    if (activity.activity_type === 'concluir_estudos') {
-        const data = formData.get('data_conclusao');
-        if (!activity.completed && !data) throw new Error('Informe a data de conclusão');
-        updates.data_termino = data || null;
-    }
-
-    if (activity.activity_type === 'ministrar_aula') {
-        const data = formData.get('data_aula');
-        if (!activity.completed && !data) throw new Error('Informe a data da aula');
-        updates.data_termino = data || null;
-    }
-
-    await db.collection('activities').doc(activity.id).update(updates);
-    await recalcScore(activity.user_id);
+    await db.collection('activities').doc(activityId).update(data);
 }
 
 async function updateLink(activityId, link) {
@@ -145,7 +156,7 @@ function showError(msg) {
     const el = document.getElementById('flash');
     if (el) {
         el.innerHTML = `<div class="flash error">${msg}</div>`;
-        setTimeout(() => el.innerHTML = '', 4000);
+        setTimeout(() => el.innerHTML = '', 5000);
     }
 }
 
@@ -153,19 +164,18 @@ function showSuccess(msg) {
     const el = document.getElementById('flash');
     if (el) {
         el.innerHTML = `<div class="flash success">${msg}</div>`;
-        setTimeout(() => el.innerHTML = '', 4000);
+        setTimeout(() => el.innerHTML = '', 5000);
     }
 }
 
 function requireAuth() {
     return new Promise((resolve) => {
-        auth.onAuthStateChanged(user => {
-            if (!user) {
-                window.location.href = 'login.html';
-                resolve(null);
-            } else {
-                resolve(user);
-            }
+        const user = auth.currentUser;
+        if (user) { resolve(user); return; }
+        const unsub = auth.onAuthStateChanged(u => {
+            unsub();
+            if (!u) { window.location.href = 'login.html'; resolve(null); }
+            else { resolve(u); }
         });
     });
 }
