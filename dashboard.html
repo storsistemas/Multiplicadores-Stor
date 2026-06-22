@@ -216,25 +216,25 @@
 
             if (activityType === 'escolher_modulo') {
                 const modulo = fd.get('modulo');
-                if (!completed && !modulo) return showError('Informe o nome do Módulo/Sistema');
+                if (completed && !modulo) return showError('Informe o nome do Módulo/Sistema');
                 updates.modulo = completed ? modulo : null;
             }
 
             if (['iniciar_estudos', 'iniciar_material', 'material_aprovado'].includes(activityType)) {
                 const data = fd.get('data_inicio');
-                if (!completed && !data) return showError('Informe a data');
+                if (completed && !data) return showError('Informe a data');
                 updates.data_inicio = completed ? data : null;
             }
 
             if (activityType === 'concluir_estudos') {
                 const data = fd.get('data_conclusao');
-                if (!completed && !data) return showError('Informe a data de conclusão');
+                if (completed && !data) return showError('Informe a data de conclusão');
                 updates.data_termino = completed ? data : null;
             }
 
             if (activityType === 'ministrar_aula') {
                 const data = fd.get('data_aula');
-                if (!completed && !data) return showError('Informe a data da aula');
+                if (completed && !data) return showError('Informe a data da aula');
                 updates.data_termino = completed ? data : null;
             }
 
