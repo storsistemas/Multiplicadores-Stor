@@ -64,7 +64,7 @@
                 const isMe = u.id === currentUserId;
                 li.innerHTML = `
                     <span class="pos">${posHtml}</span>
-                    <span class="name">${u.name} <span style="font-size:0.75em;color:#a8927a;">${r.icon} ${r.title}</span></span>
+                    <span class="name">${u.name} <span class="title-tag">${r.icon} ${r.title}</span></span>
                     <span class="score">
                         ${u.total_score} XP
                         ${isMe ? '<span class="badge badge-warning">Voc\u00ea</span>' : ''}

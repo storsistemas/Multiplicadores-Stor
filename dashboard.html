@@ -28,22 +28,21 @@
 
         <div class="highlight-card">
             <h2>&#x1F3F9; Em Destaque</h2>
-            <div style="margin-top:15px">
+            <div class="stats-row">
                 <div class="stat">
                     <div class="stat-label">Nome</div>
-                    <div class="stat-value" id="userName">-</div>
+                    <div class="stat-value small" id="userName">-</div>
                 </div>
                 <div class="stat">
                     <div class="stat-label">Rank</div>
                     <div class="stat-value" id="userRank">#-</div>
                 </div>
                 <div class="stat">
-                    <div class="stat-label">Título</div>
-                    <div class="stat-value" id="userTitle" style="font-size:1.3em">-</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-label">Experiência</div>
-                    <div class="stat-value" id="userScore">0 XP</div>
+                    <div class="stat-label">Título / Experiência</div>
+                    <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;">
+                        <span class="stat-value small" id="userTitle">-</span>
+                        <span class="stat-value" id="userScore">0 XP</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -120,82 +119,82 @@
 
                 } else if (grupo.type === 'escolher_modulo') {
                     html += `<div class="meta">
-                        <form onsubmit="return handleToggle(event, '${s.id}', 'escolher_modulo')">
+                        <form class="meta-row" onsubmit="return handleToggle(event, '${s.id}', 'escolher_modulo')">
                             ${!done
                                 ? `<input type="text" name="modulo" class="inline-input" placeholder="Nome do Módulo/Sistema" required>
                                    <button type="submit" class="btn btn-success btn-sm">Escolher</button>`
                                 : `<strong>Módulo:</strong> ${s.modulo || '-'}
-                                   <button type="submit" class="btn btn-warning btn-sm" style="margin-left:10px">Desfazer</button>`}
+                                   <button type="submit" class="btn btn-warning btn-sm">Desfazer</button>`}
                         </form>
                     </div>`;
 
                 } else if (grupo.type === 'iniciar_estudos') {
                     html += `<div class="meta">
-                        <form onsubmit="return handleToggle(event, '${s.id}', 'iniciar_estudos')">
+                        <form class="meta-row" onsubmit="return handleToggle(event, '${s.id}', 'iniciar_estudos')">
                             ${!done
                                 ? `<input type="date" name="data_inicio" class="inline-input" required>
                                    <button type="submit" class="btn btn-success btn-sm">Iniciar</button>`
                                 : `<strong>Data de início:</strong> ${s.data_inicio || '-'}
-                                   <button type="submit" class="btn btn-warning btn-sm" style="margin-left:10px">Desfazer</button>`}
+                                   <button type="submit" class="btn btn-warning btn-sm">Desfazer</button>`}
                         </form>
                     </div>`;
 
                 } else if (grupo.type === 'concluir_estudos') {
                     html += `<div class="meta">
-                        <form onsubmit="return handleToggle(event, '${s.id}', 'concluir_estudos')">
+                        <form class="meta-row" onsubmit="return handleToggle(event, '${s.id}', 'concluir_estudos')">
                             ${!done
                                 ? `<input type="date" name="data_conclusao" class="inline-input" required>
                                    <button type="submit" class="btn btn-success btn-sm">Concluir</button>`
                                 : `<strong>Data de conclusão:</strong> ${s.data_termino || '-'}
-                                   <button type="submit" class="btn btn-warning btn-sm" style="margin-left:10px">Desfazer</button>`}
+                                   <button type="submit" class="btn btn-warning btn-sm">Desfazer</button>`}
                         </form>
                     </div>`;
 
                 } else if (grupo.type === 'iniciar_material') {
                     html += `<div class="meta">
-                        <form onsubmit="return handleToggle(event, '${s.id}', 'iniciar_material')">
+                        <form class="meta-row" onsubmit="return handleToggle(event, '${s.id}', 'iniciar_material')">
                             ${!done
                                 ? `<input type="date" name="data_inicio" class="inline-input" required>
                                    <button type="submit" class="btn btn-success btn-sm">Iniciar</button>`
                                 : `<strong>Data de início:</strong> ${s.data_inicio || '-'}
-                                   <button type="submit" class="btn btn-warning btn-sm" style="margin-left:10px">Desfazer</button>`}
+                                   <button type="submit" class="btn btn-warning btn-sm">Desfazer</button>`}
                         </form>
                     </div>`;
 
                 } else if (grupo.type === 'material_aprovado') {
                     html += `<div class="meta">
-                        <form onsubmit="return handleToggle(event, '${s.id}', 'material_aprovado')">
+                        <form class="meta-row" onsubmit="return handleToggle(event, '${s.id}', 'material_aprovado')">
                             ${!done
                                 ? `<input type="date" name="data_inicio" class="inline-input" required>
                                    <button type="submit" class="btn btn-success btn-sm">Aprovar Material</button>`
                                 : `<strong>Data de aprovação:</strong> ${s.data_inicio || '-'}
-                                   <button type="submit" class="btn btn-warning btn-sm" style="margin-left:10px">Desfazer</button>`}
+                                   <button type="submit" class="btn btn-warning btn-sm">Desfazer</button>`}
                         </form>
                     </div>
                     <div class="link-info">
-                        <strong>Link do Material:</strong>
+                        <strong>Link do Material</strong>
                         ${s.link ? `<a href="${s.link}" target="_blank">${s.link}</a>` : ''}
-                        <form onsubmit="return handleLink(event, '${s.id}')" style="margin-top:5px">
-                            <input type="url" name="link" class="inline-input" placeholder="URL do material para avaliação" value="${s.link || ''}" style="width:300px">
+                        <form class="meta-row" onsubmit="return handleLink(event, '${s.id}')" style="margin-top:4px">
+                            <input type="url" name="link" class="inline-input" placeholder="URL do material para avaliação" value="${s.link || ''}" style="width:280px">
                             <button type="submit" class="btn btn-primary btn-sm">Enviar para Revisão</button>
                         </form>
                     </div>`;
 
                 } else if (grupo.type === 'ministrar_aula') {
                     html += `<div class="meta">
-                        <form onsubmit="return handleToggle(event, '${s.id}', 'ministrar_aula')">
+                        <form class="meta-row" onsubmit="return handleToggle(event, '${s.id}', 'ministrar_aula')">
                             ${!done
                                 ? `<input type="date" name="data_aula" class="inline-input" required>
                                    <button type="submit" class="btn btn-success btn-sm">Registrar Aula</button>`
                                 : `<strong>Data da aula:</strong> ${s.data_termino || '-'}
-                                   <button type="submit" class="btn btn-warning btn-sm" style="margin-left:10px">Desfazer</button>`}
+                                   <button type="submit" class="btn btn-warning btn-sm">Desfazer</button>`}
                         </form>
                     </div>`;
 
                 } else if (['feedback_positivo', 'reducao_chamados', 'reducao_tma'].includes(grupo.type)) {
                     html += `<div class="meta" style="color:#8a7a6a;">
                         ${!done
-                            ? '<em>Aguardando avaliação do administrador...</em>'
+                            ? '<em>Aguardando Aprova\u00e7\u00e3o da Divindade...</em>'
                             : `<strong style="color:#5cb85c;">+${s.pontos} XP</strong> — Atribuído pelo administrador`}
                     </div>`;
                 }
