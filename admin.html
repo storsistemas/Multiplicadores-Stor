@@ -32,20 +32,50 @@
             <div style="margin:15px 0;padding:12px;background:rgba(201,168,76,0.08);border-radius:8px;border:1px solid rgba(201,168,76,0.15);">
                 <p style="color:#a8927a;font-size:0.85em;">
                     <strong style="color:#c9a84c;">&#x2139; Instruções:</strong><br>
-                    &#x1F539; <strong>Editar nome</strong> — clique no nome do participante para renomear<br>
-                    &#x1F539; <strong>Adicionar XP</strong> — use o botão para adicionar experiência manualmente
+                    &#x1F539; <strong>Editar nome</strong> — clique no ✎ ao lado do nome do participante<br>
+                    &#x1F539; <strong>+XP direto</strong> — adiciona XP avulso (não vincula a nenhuma atividade)<br>
+                    &#x1F539; <strong>Atividades do Admin</strong> — atribui XP vinculado a uma atividade específica
                 </p>
             </div>
+        </div>
 
+        <div class="card">
+            <h3>&#x1F4DD; Atribuir Atividade (Admin)</h3>
+            <form id="assignForm" style="display:flex;flex-wrap:wrap;gap:10px;align-items:end;">
+                <div class="form-group" style="flex:1;min-width:180px;">
+                    <label>Participante</label>
+                    <select id="assignUser" class="inline-input" style="width:100%;padding:10px;" required>
+                        <option value="">Selecione...</option>
+                    </select>
+                </div>
+                <div class="form-group" style="flex:1;min-width:200px;">
+                    <label>Atividade</label>
+                    <select id="assignType" class="inline-input" style="width:100%;padding:10px;" required>
+                        <option value="feedback_positivo">Feedback Positivo (Treinamento)</option>
+                        <option value="reducao_chamados">Redução de Chamados no Módulo</option>
+                        <option value="reducao_tma">Redução de TMA no Módulo</option>
+                    </select>
+                </div>
+                <div class="form-group" style="width:100px;">
+                    <label>XP</label>
+                    <input type="number" id="assignXp" class="inline-input" style="width:100%;padding:10px;" placeholder="0" min="1" required>
+                </div>
+                <div style="padding-bottom:2px;">
+                    <button type="submit" class="btn btn-success">Atribuir XP</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <h3>&#x1F465; Gerenciar Participantes</h3>
             <div style="overflow-x:auto;">
                 <table style="width:100%;border-collapse:collapse;">
                     <thead>
                         <tr style="border-bottom:1px solid rgba(201,168,76,0.2);">
                             <th style="padding:10px 8px;text-align:left;color:#c9a84c;font-family:'Cinzel',serif;font-size:0.8em;">#</th>
                             <th style="padding:10px 8px;text-align:left;color:#c9a84c;font-family:'Cinzel',serif;font-size:0.8em;">Nome</th>
-                            <th style="padding:10px 8px;text-align:left;color:#c9a84c;font-family:'Cinzel',serif;font-size:0.8em;">E-mail</th>
                             <th style="padding:10px 8px;text-align:center;color:#c9a84c;font-family:'Cinzel',serif;font-size:0.8em;">XP</th>
-                            <th style="padding:10px 8px;text-align:center;color:#c9a84c;font-family:'Cinzel',serif;font-size:0.8em;">Ações</th>
+                            <th style="padding:10px 8px;text-align:center;color:#c9a84c;font-family:'Cinzel',serif;font-size:0.8em;">+XP Direto</th>
                         </tr>
                     </thead>
                     <tbody id="adminTableBody"></tbody>
@@ -55,6 +85,8 @@
     </div>
 
     <script>
+        let adminUsers = [];
+
         async function loadAdmin() {
             const user = await requireAuth();
             if (!user) return;
@@ -66,40 +98,54 @@
                 return;
             }
 
-            const users = await getRanking();
+            adminUsers = await getRanking();
+            renderTable(adminUsers, user);
+            populateSelect(adminUsers);
+        }
+
+        function renderTable(users, currentUser) {
             const tbody = document.getElementById('adminTableBody');
             tbody.innerHTML = '';
 
             for (const u of users) {
                 const tr = document.createElement('tr');
                 tr.style.borderBottom = '1px solid rgba(201,168,76,0.08)';
-
                 const r = getRank(u.total_score);
 
                 tr.innerHTML = `
-                    <td style="padding:12px 8px;color:#8a7a6a;font-size:0.85em;">${u.id === user.uid ? '<span class="badge badge-warning">Admin</span>' : (users.indexOf(u) + 1)}</td>
+                    <td style="padding:12px 8px;color:#8a7a6a;font-size:0.85em;">${u.id === currentUser.uid ? '<span class="badge badge-warning">Admin</span>' : (users.indexOf(u) + 1)}</td>
                     <td style="padding:12px 8px;">
                         <span id="nameDisplay_${u.id}" style="color:#d4c5a9;">${u.name}</span>
-                        <input id="nameInput_${u.id}" value="${u.name}" style="display:none;width:180px;" class="inline-input">
+                        <input id="nameInput_${u.id}" value="${u.name}" style="display:none;width:160px;" class="inline-input">
                         <button id="editBtn_${u.id}" class="btn btn-sm btn-primary" onclick="editName('${u.id}')" style="margin-left:5px;">✎</button>
                         <button id="saveBtn_${u.id}" class="btn btn-sm btn-success" onclick="saveName('${u.id}')" style="display:none;">Salvar</button>
                         <button id="cancelBtn_${u.id}" class="btn btn-sm btn-warning" onclick="cancelEdit('${u.id}')" style="display:none;">Cancelar</button>
+                        <br><span style="font-size:0.75em;color:#8a7a6a;">${r.icon} ${r.title}</span>
                     </td>
-                    <td style="padding:12px 8px;color:#8a7a6a;font-size:0.85em;">${u.id === user.uid ? user.email : '—'}</td>
                     <td style="padding:12px 8px;text-align:center;color:#5cb85c;font-family:'Cinzel',serif;font-weight:600;">${u.total_score} XP</td>
                     <td style="padding:12px 8px;text-align:center;">
                         <div style="display:flex;gap:5px;align-items:center;justify-content:center;flex-wrap:wrap;">
-                            <input type="number" id="xpInput_${u.id}" class="inline-input" placeholder="XP" style="width:70px;text-align:center;" min="1">
-                            <button class="btn btn-sm btn-success" onclick="addXP('${u.id}')">+XP</button>
+                            <input type="number" id="xpInput_${u.id}" class="inline-input" placeholder="XP" style="width:65px;text-align:center;" min="1">
+                            <button class="btn btn-sm btn-success" onclick="addDirectXP('${u.id}')">+XP</button>
                         </div>
                     </td>
                 `;
-
                 tbody.appendChild(tr);
             }
 
             if (users.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="padding:30px;text-align:center;color:#8a7a6a;">Nenhum participante encontrado.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" style="padding:30px;text-align:center;color:#8a7a6a;">Nenhum participante encontrado.</td></tr>';
+            }
+        }
+
+        function populateSelect(users) {
+            const sel = document.getElementById('assignUser');
+            sel.innerHTML = '<option value="">Selecione...</option>';
+            for (const u of users) {
+                const opt = document.createElement('option');
+                opt.value = u.id;
+                opt.textContent = u.name + ' (' + u.total_score + ' XP)';
+                sel.appendChild(opt);
             }
         }
 
@@ -134,7 +180,7 @@
             document.getElementById('cancelBtn_' + userId).style.display = 'none';
         }
 
-        async function addXP(userId) {
+        async function addDirectXP(userId) {
             const input = document.getElementById('xpInput_' + userId);
             const amount = parseInt(input.value);
             if (!amount || amount <= 0) return showError('Informe um valor de XP válido.');
@@ -147,6 +193,25 @@
                 showError(err.message);
             }
         }
+
+        document.getElementById('assignForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const userId = document.getElementById('assignUser').value;
+            const activityType = document.getElementById('assignType').value;
+            const xpAmount = parseInt(document.getElementById('assignXp').value);
+
+            if (!userId) return showError('Selecione um participante.');
+            if (!xpAmount || xpAmount <= 0) return showError('Informe um valor de XP válido.');
+
+            try {
+                await adminAssignActivity(userId, activityType, xpAmount);
+                document.getElementById('assignXp').value = '';
+                showSuccess('Atividade atribuída com sucesso!');
+                loadAdmin();
+            } catch (err) {
+                showError(err.message);
+            }
+        });
 
         document.getElementById('logoutBtn').addEventListener('click', async (e) => {
             e.preventDefault();

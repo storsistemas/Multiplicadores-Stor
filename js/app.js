@@ -22,7 +22,12 @@ const ATIVIDADES = [
     { type: 'iniciar_material', label: 'Iniciando a Criação do Material Didático' },
     { type: 'material_aprovado', label: 'Material Aprovado (Revisão)' },
     { type: 'ministrar_aula', label: 'Ministrar Treinamento' },
+    { type: 'feedback_positivo', label: 'Feedback Positivo (Treinamento)' },
+    { type: 'reducao_chamados', label: 'Redução de Chamados no Módulo' },
+    { type: 'reducao_tma', label: 'Redução de TMA no Módulo' },
 ];
+
+const ADMIN_ATIVIDADES = ['feedback_positivo', 'reducao_chamados', 'reducao_tma'];
 
 const GRUPOS = [
     { type: 'voluntariar', label: 'Voluntariar-se para o Projeto', steps: ['voluntariar'] },
@@ -32,6 +37,9 @@ const GRUPOS = [
     { type: 'iniciar_material', label: 'Iniciando a Criação do Material Didático', steps: ['iniciar_material'] },
     { type: 'material_aprovado', label: 'Material Aprovado (Revisão)', steps: ['material_aprovado'] },
     { type: 'ministrar_aula', label: 'Ministrar Treinamento', steps: ['ministrar_aula'] },
+    { type: 'feedback_positivo', label: 'Feedback Positivo (Treinamento)', steps: ['feedback_positivo'] },
+    { type: 'reducao_chamados', label: 'Redução de Chamados no Módulo', steps: ['reducao_chamados'] },
+    { type: 'reducao_tma', label: 'Redução de TMA no Módulo', steps: ['reducao_tma'] },
 ];
 
 // ============ AUTH ============
@@ -191,6 +199,30 @@ async function adminAddXP(userId, xpAmount) {
     if (!profile) throw new Error('Perfil não encontrado');
     const newTotal = (profile.total_score || 0) + xpAmount;
     await db.collection('profiles').doc(userId).update({ total_score: newTotal });
+}
+
+async function adminAssignActivity(userId, activityType, xpAmount) {
+    const snap = await db.collection('activities')
+        .where('user_id', '==', userId)
+        .where('activity_type', '==', activityType)
+        .get();
+
+    if (snap.docs.length > 0) {
+        const doc = snap.docs[0];
+        await doc.ref.update({ completed: true, pontos: xpAmount });
+    } else {
+        await db.collection('activities').add({
+            user_id: userId,
+            activity_type: activityType,
+            completed: true,
+            data_inicio: null,
+            data_termino: null,
+            modulo: null,
+            link: null,
+            pontos: xpAmount,
+        });
+    }
+    await recalcScore(userId);
 }
 
 // ============ FORM HELPERS ============

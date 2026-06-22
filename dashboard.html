@@ -191,6 +191,13 @@
                                    <button type="submit" class="btn btn-warning btn-sm" style="margin-left:10px">Desfazer</button>`}
                         </form>
                     </div>`;
+
+                } else if (['feedback_positivo', 'reducao_chamados', 'reducao_tma'].includes(grupo.type)) {
+                    html += `<div class="meta" style="color:#8a7a6a;">
+                        ${!done
+                            ? '<em>Aguardando avaliação do administrador...</em>'
+                            : `<strong style="color:#5cb85c;">+${s.pontos} XP</strong> — Atribuído pelo administrador`}
+                    </div>`;
                 }
 
                 div.innerHTML = html;
