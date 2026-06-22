@@ -1,0 +1,43 @@
+====================================================================
+REGRAS DO FIRESTORE - Cloud Firestore > Rules
+====================================================================
+
+Cole estas regras no Console do Firebase:
+Firebase Console > Firestore Database > Rules
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Perfis: todos podem ler (ranking), só o dono escreve
+    match /profiles/{userId} {
+      allow read: if true;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Atividades: só o dono
+    match /activities/{docId} {
+      allow read: if request.auth != null && resource.data.user_id == request.auth.uid;
+      allow create: if request.auth != null && request.data.user_id == request.auth.uid;
+      allow update: if request.auth != null && get(/databases/$(database)/documents/activities/$(docId)).data.user_id == request.auth.uid;
+      allow delete: if request.auth != null && get(/databases/$(database)/documents/activities/$(docId)).data.user_id == request.auth.uid;
+    }
+  }
+}
+
+====================================================================
+CONFIGURAÇÃO DO FIREBASE AUTH
+====================================================================
+
+Firebase Console > Authentication > Sign-in method:
+- Habilitar "E-mail/Senha"
+- (Opcional) Desabilitar "Verificar e-mail" em Templates
+
+====================================================================
+ÍNDICES DO FIRESTORE
+====================================================================
+
+O Firebase cria índices automaticamente para consultas simples.
+Se aparecer erro de índice, clique no link do erro no console.

@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ranking - Multiplicadores Stor</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
     <script src="js/config.js"></script>
     <script src="js/app.js"></script>
 </head>
@@ -30,8 +32,8 @@
 
     <script>
         async function loadRanking() {
-            const { data: { session } } = await supabase.auth.getSession();
-            const currentUserId = session?.user?.id;
+            const user = auth.currentUser;
+            const currentUserId = user?.uid;
 
             const users = await getRanking();
             const list = document.getElementById('rankingList');
@@ -42,7 +44,7 @@
                 return;
             }
 
-            users.forEach((user, i) => {
+            users.forEach((u, i) => {
                 const li = document.createElement('li');
                 let posHtml;
                 if (i === 0) posHtml = '<span class="rank-medal">&#x1F947;</span>';
@@ -50,12 +52,12 @@
                 else if (i === 2) posHtml = '<span class="rank-medal">&#x1F949;</span>';
                 else posHtml = '#' + (i + 1);
 
-                const isMe = user.id === currentUserId;
+                const isMe = u.id === currentUserId;
                 li.innerHTML = `
                     <span class="pos">${posHtml}</span>
-                    <span class="name">${user.name}</span>
+                    <span class="name">${u.name}</span>
                     <span class="score">
-                        ${user.total_score} pts
+                        ${u.total_score} pts
                         ${isMe ? '<span class="badge badge-warning">Voc\u00ea</span>' : ''}
                     </span>
                 `;
@@ -69,7 +71,7 @@
             window.location.href = 'index.html';
         });
 
-        loadRanking();
+        auth.onAuthStateChanged(() => loadRanking());
     </script>
 </body>
 </html>

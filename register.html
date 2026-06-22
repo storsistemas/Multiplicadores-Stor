@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cadastro - Multiplicadores Stor</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
     <script src="js/config.js"></script>
     <script src="js/app.js"></script>
 </head>
@@ -38,7 +40,6 @@
             </p>
         </div>
     </div>
-
     <script>
         document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -53,8 +54,8 @@
 
             try {
                 await register(name, email, password);
-                showSuccess('Conta criada! Verifique seu e-mail para confirmar. Redirecionando...');
-                setTimeout(() => window.location.href = 'login.html', 3000);
+                showSuccess('Conta criada com sucesso! Redirecionando...');
+                setTimeout(() => window.location.href = 'dashboard.html', 2000);
             } catch (err) {
                 showError(err.message);
             }

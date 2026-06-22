@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Multiplicadores Stor</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
     <script src="js/config.js"></script>
     <script src="js/app.js"></script>
 </head>
@@ -23,7 +25,7 @@
     <div class="container">
         <div id="flash"></div>
 
-        <div class="highlight-card" id="highlightCard">
+        <div class="highlight-card">
             <h2>Em Destaque</h2>
             <div style="margin-top:15px">
                 <div class="stat">
@@ -48,20 +50,23 @@
     </div>
 
     <script>
-        async function loadDashboard() {
-            const session = await requireAuth();
-            if (!session) return;
-            const userId = session.user.id;
+        let currentUser = null;
 
-            const profile = await getProfile(userId);
+        async function loadDashboard() {
+            const user = await requireAuth();
+            if (!user) return;
+            currentUser = user;
+
+            const profile = await getProfile(user.uid);
+            if (!profile) return;
             document.getElementById('userName').textContent = profile.name;
             document.getElementById('userScore').textContent = profile.total_score + ' pts';
 
             const ranking = await getRanking();
-            const rankPos = ranking.findIndex(u => u.id === userId) + 1;
+            const rankPos = ranking.findIndex(u => u.id === user.uid) + 1;
             document.getElementById('userRank').textContent = '#' + rankPos;
 
-            const activities = await getActivities(userId);
+            const activities = await getActivities(user.uid);
             const list = document.getElementById('activitiesList');
             list.innerHTML = '';
 
@@ -76,7 +81,7 @@
 
                 if (act.activity_type === 'voluntariar') {
                     html += `<div class="meta">
-                        <form onsubmit="return handleToggle(event, '${act.id}', '${userId}')">
+                        <form onsubmit="return handleToggle(event, '${act.id}')">
                             ${!act.completed
                                 ? '<button type="submit" class="btn btn-success btn-sm">Marcar como Voluntariado</button>'
                                 : '<button type="submit" class="btn btn-warning btn-sm">Desmarcar</button>'}
@@ -85,7 +90,7 @@
 
                 } else if (act.activity_type === 'escolher_modulo') {
                     html += `<div class="meta">
-                        <form onsubmit="return handleToggle(event, '${act.id}', '${userId}')">
+                        <form onsubmit="return handleToggle(event, '${act.id}')">
                             ${!act.completed
                                 ? `<input type="text" name="modulo" class="inline-input" placeholder="Nome do M\u00f3dulo/Sistema" required>
                                    <button type="submit" class="btn btn-success btn-sm">Marcar</button>`
@@ -96,7 +101,7 @@
 
                 } else if (act.activity_type === 'iniciar_estudos') {
                     html += `<div class="meta">
-                        <form onsubmit="return handleToggle(event, '${act.id}', '${userId}')">
+                        <form onsubmit="return handleToggle(event, '${act.id}')">
                             ${!act.completed
                                 ? `<input type="date" name="data_inicio" class="inline-input" required>
                                    <button type="submit" class="btn btn-success btn-sm">Iniciar os Estudos</button>`
@@ -107,7 +112,7 @@
 
                 } else if (act.activity_type === 'terminar_estudos') {
                     html += `<div class="meta">
-                        <form onsubmit="return handleToggle(event, '${act.id}', '${userId}')">
+                        <form onsubmit="return handleToggle(event, '${act.id}')">
                             ${!act.completed
                                 ? `<input type="date" name="data_termino" class="inline-input" required>
                                    <button type="submit" class="btn btn-success btn-sm">T\u00e9rmino dos Estudos</button>`
@@ -118,7 +123,7 @@
 
                 } else if (act.activity_type === 'concluir_estudos') {
                     html += `<div class="meta">
-                        <form onsubmit="return handleToggle(event, '${act.id}', '${userId}')">
+                        <form onsubmit="return handleToggle(event, '${act.id}')">
                             ${!act.completed
                                 ? `<input type="date" name="data_conclusao" class="inline-input" required>
                                    <button type="submit" class="btn btn-success btn-sm">Concluir os Estudos</button>`
@@ -129,7 +134,7 @@
 
                 } else if (act.activity_type === 'iniciar_material') {
                     html += `<div class="meta">
-                        <form onsubmit="return handleToggle(event, '${act.id}', '${userId}')">
+                        <form onsubmit="return handleToggle(event, '${act.id}')">
                             ${!act.completed
                                 ? `<input type="date" name="data_inicio" class="inline-input" required>
                                    <button type="submit" class="btn btn-success btn-sm">Iniciar Cria\u00e7\u00e3o de Material</button>`
@@ -140,7 +145,7 @@
 
                 } else if (act.activity_type === 'terminar_material') {
                     html += `<div class="meta">
-                        <form onsubmit="return handleToggle(event, '${act.id}', '${userId}')">
+                        <form onsubmit="return handleToggle(event, '${act.id}')">
                             ${!act.completed
                                 ? `<input type="date" name="data_termino" class="inline-input" required>
                                    <button type="submit" class="btn btn-success btn-sm">Finalizar Cria\u00e7\u00e3o de Material</button>`
@@ -159,7 +164,7 @@
 
                 } else if (act.activity_type === 'ministrar_aula') {
                     html += `<div class="meta">
-                        <form onsubmit="return handleToggle(event, '${act.id}', '${userId}')">
+                        <form onsubmit="return handleToggle(event, '${act.id}')">
                             ${!act.completed
                                 ? `<input type="date" name="data_aula" class="inline-input" required>
                                    <button type="submit" class="btn btn-success btn-sm">Aula Ministrada</button>`
@@ -174,11 +179,11 @@
             }
         }
 
-        async function handleToggle(e, activityId, userId) {
+        async function handleToggle(e, activityId) {
             e.preventDefault();
             const form = e.target;
             const fd = new FormData(form);
-            const activities = await getActivities(userId);
+            const activities = await getActivities(currentUser.uid);
             const activity = activities.find(a => a.id === activityId);
             if (!activity) return;
 
@@ -197,7 +202,7 @@
             const link = e.target.querySelector('input[name="link"]').value.trim();
             if (!link) return showError('Informe o link do material.');
             try {
-                await updateLink(activityId, null, link);
+                await updateLink(activityId, link);
                 showSuccess('Link salvo!');
                 loadDashboard();
             } catch (err) {

@@ -1,3 +1,7 @@
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
 const PONTOS = {
     voluntariar: 10,
     escolher_modulo: 10,
@@ -20,71 +24,68 @@ const ATIVIDADES = [
     { type: 'ministrar_aula', label: 'Ministrar Treinamento' },
 ];
 
-const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
 // ============ AUTH ============
 
 async function register(name, email, password) {
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-        email, password,
-    });
-    if (authError) throw authError;
-
-    const { error: profileError } = await supabase.from('profiles').insert({
-        id: authData.user.id,
+    const cred = await auth.createUserWithEmailAndPassword(email, password);
+    await db.collection('profiles').doc(cred.user.uid).set({
         name,
+        total_score: 0,
+        created_at: firebase.firestore.FieldValue.serverTimestamp(),
     });
-    if (profileError) throw profileError;
-
-    return authData;
+    const batch = db.batch();
+    for (const a of ATIVIDADES) {
+        const ref = db.collection('activities').doc();
+        batch.set(ref, {
+            user_id: cred.user.uid,
+            activity_type: a.type,
+            completed: false,
+            data_inicio: null,
+            data_termino: null,
+            modulo: null,
+            link: null,
+            pontos: 0,
+            created_at: firebase.firestore.FieldValue.serverTimestamp(),
+        });
+    }
+    await batch.commit();
+    return cred;
 }
 
 async function login(email, password) {
-    const { data, error } = await supabase.auth.signInWithPassword({
-        email, password,
-    });
-    if (error) throw error;
-    return data;
+    return auth.signInWithEmailAndPassword(email, password);
 }
 
-async function logout() {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+function logout() {
+    return auth.signOut();
 }
 
 // ============ PROFILE ============
 
 async function getProfile(userId) {
-    const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-    if (error) throw error;
-    return data;
+    const doc = await db.collection('profiles').doc(userId).get();
+    return doc.exists ? { id: doc.id, ...doc.data() } : null;
 }
 
 async function getRanking() {
-    const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('total_score', { ascending: false });
-    if (error) throw error;
-    return data;
+    const snap = await db.collection('profiles')
+        .orderBy('total_score', 'desc')
+        .get();
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
 // ============ ACTIVITIES ============
 
 async function getActivities(userId) {
-    const { data, error } = await supabase
-        .from('activities')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at');
-    if (error) throw error;
+    const snap = await db.collection('activities')
+        .where('user_id', '==', userId)
+        .orderBy('created_at')
+        .get();
 
-    const ordered = ATIVIDADES.map(a => data.find(d => d.activity_type === a.type));
-    return ordered.filter(Boolean);
+    const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    return ATIVIDADES
+        .map(a => data.find(d => d.activity_type === a.type))
+        .filter(Boolean);
 }
 
 async function toggleActivity(activity, formData) {
@@ -121,33 +122,21 @@ async function toggleActivity(activity, formData) {
         updates.data_termino = data || null;
     }
 
-    const { error } = await supabase
-        .from('activities')
-        .update(updates)
-        .eq('id', activity.id);
-    if (error) throw error;
-
+    await db.collection('activities').doc(activity.id).update(updates);
     await recalcScore(activity.user_id);
 }
 
-async function updateLink(activityId, userId, link) {
-    const { error } = await supabase
-        .from('activities')
-        .update({ link })
-        .eq('id', activityId);
-    if (error) throw error;
+async function updateLink(activityId, link) {
+    await db.collection('activities').doc(activityId).update({ link });
 }
 
 async function recalcScore(userId) {
-    const { data: acts, error } = await supabase
-        .from('activities')
-        .select('pontos')
-        .eq('user_id', userId)
-        .eq('completed', true);
-    if (error) throw error;
-
-    const total = acts.reduce((s, a) => s + a.pontos, 0);
-    await supabase.from('profiles').update({ total_score: total }).eq('id', userId);
+    const snap = await db.collection('activities')
+        .where('user_id', '==', userId)
+        .where('completed', '==', true)
+        .get();
+    const total = snap.docs.reduce((s, d) => s + (d.data().pontos || 0), 0);
+    await db.collection('profiles').doc(userId).update({ total_score: total });
 }
 
 // ============ FORM HELPERS ============
@@ -168,11 +157,15 @@ function showSuccess(msg) {
     }
 }
 
-async function requireAuth() {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-        window.location.href = 'login.html';
-        return null;
-    }
-    return session;
+function requireAuth() {
+    return new Promise((resolve) => {
+        auth.onAuthStateChanged(user => {
+            if (!user) {
+                window.location.href = 'login.html';
+                resolve(null);
+            } else {
+                resolve(user);
+            }
+        });
+    });
 }
