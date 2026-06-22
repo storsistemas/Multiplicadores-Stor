@@ -1,17 +1,9 @@
-// ============================================================
-// CONFIGURAÇÃO DO FIREBASE
-// ============================================================
-// 1. Acesse https://console.firebase.google.com
-// 2. Crie um projeto (ou use existente)
-// 3. Vá em Project Settings > General > Seus apps > Web
-// 4. Copie o objeto firebaseConfig abaixo
-// ============================================================
-
 const firebaseConfig = {
-    apiKey: "SUA_API_KEY",
-    authDomain: "SEU_PROJETO.firebaseapp.com",
-    projectId: "SEU_PROJETO",
-    storageBucket: "SEU_PROJETO.firebasestorage.app",
-    messagingSenderId: "000000000000",
-    appId: "1:000000000000:web:xxxxxxxxxxxx"
+    apiKey: "AIzaSyC5EkY4GPQkamRq9SNkCgfsm3zGrcvzRJ8",
+    authDomain: "multiplicadores-stor.firebaseapp.com",
+    projectId: "multiplicadores-stor",
+    storageBucket: "multiplicadores-stor.firebasestorage.app",
+    messagingSenderId: "535519563382",
+    appId: "1:535519563382:web:05cd0037d7cf7ae4b7d957",
+    measurementId: "G-CRZRFF8C96"
 };
