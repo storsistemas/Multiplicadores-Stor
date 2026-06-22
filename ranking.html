@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ranking - Multiplicadores Stor</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/app.js"></script>
+</head>
+<body>
+    <div class="header">
+        <h1>Multiplicadores Stor</h1>
+    </div>
+    <div class="nav">
+        <a href="index.html">Home</a>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="ranking.html">Ranking</a>
+        <a href="#" id="logoutBtn">Sair</a>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h2>Ranking dos Participantes</h2>
+            <div id="flash"></div>
+            <ul class="ranking-list" id="rankingList"></ul>
+        </div>
+    </div>
+
+    <script>
+        async function loadRanking() {
+            const { data: { session } } = await supabase.auth.getSession();
+            const currentUserId = session?.user?.id;
+
+            const users = await getRanking();
+            const list = document.getElementById('rankingList');
+            list.innerHTML = '';
+
+            if (users.length === 0) {
+                list.innerHTML = '<p class="text-center">Nenhum participante cadastrado ainda.</p>';
+                return;
+            }
+
+            users.forEach((user, i) => {
+                const li = document.createElement('li');
+                let posHtml;
+                if (i === 0) posHtml = '<span class="rank-medal">&#x1F947;</span>';
+                else if (i === 1) posHtml = '<span class="rank-medal">&#x1F948;</span>';
+                else if (i === 2) posHtml = '<span class="rank-medal">&#x1F949;</span>';
+                else posHtml = '#' + (i + 1);
+
+                const isMe = user.id === currentUserId;
+                li.innerHTML = `
+                    <span class="pos">${posHtml}</span>
+                    <span class="name">${user.name}</span>
+                    <span class="score">
+                        ${user.total_score} pts
+                        ${isMe ? '<span class="badge badge-warning">Voc\u00ea</span>' : ''}
+                    </span>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        document.getElementById('logoutBtn').addEventListener('click', async (e) => {
+            e.preventDefault();
+            await logout();
+            window.location.href = 'index.html';
+        });
+
+        loadRanking();
+    </script>
+</body>
+</html>
