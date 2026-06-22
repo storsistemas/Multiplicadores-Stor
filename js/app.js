@@ -150,6 +150,32 @@ async function recalcScore(userId) {
     await db.collection('profiles').doc(userId).update({ total_score: total });
 }
 
+// ============ RANK SYSTEM ============
+
+const RANKS = [
+    { xp: 0, title: 'Iniciante', icon: '&#x1F4DA;' },
+    { xp: 250, title: 'Aprendiz', icon: '&#x1F4D6;' },
+    { xp: 400, title: 'Artesão', icon: '&#x1F58C;' },
+    { xp: 650, title: 'Alquimista', icon: '&#x1F9EA;' },
+    { xp: 1200, title: 'Mestre de Batalha', icon: '&#x1F5E1;' },
+    { xp: 1600, title: 'Grão-Mestre', icon: '&#x1F451;' },
+];
+
+function getRank(totalXp) {
+    let rank = RANKS[0];
+    for (const r of RANKS) {
+        if (totalXp >= r.xp) rank = r;
+    }
+    return rank;
+}
+
+function getNextRank(totalXp) {
+    for (const r of RANKS) {
+        if (totalXp < r.xp) return r;
+    }
+    return null;
+}
+
 // ============ FORM HELPERS ============
 
 function showError(msg) {

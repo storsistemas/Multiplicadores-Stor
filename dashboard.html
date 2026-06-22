@@ -37,6 +37,10 @@
                     <div class="stat-value" id="userRank">#-</div>
                 </div>
                 <div class="stat">
+                    <div class="stat-label">Título</div>
+                    <div class="stat-value" id="userTitle" style="font-size:1.3em">-</div>
+                </div>
+                <div class="stat">
                     <div class="stat-label">Experiência</div>
                     <div class="stat-value" id="userScore">0 XP</div>
                 </div>
@@ -72,6 +76,17 @@
             const ranking = await getRanking();
             const rankPos = ranking.findIndex(u => u.id === user.uid) + 1;
             document.getElementById('userRank').textContent = '#' + (rankPos || '-');
+
+            const rank = getRank(profile.total_score);
+            const nextRank = getNextRank(profile.total_score);
+            const titleEl = document.getElementById('userTitle');
+            titleEl.innerHTML = rank.icon + ' ' + rank.title;
+            if (nextRank) {
+                const needed = nextRank.xp - profile.total_score;
+                titleEl.title = 'Faltam ' + needed + ' XP para ' + nextRank.title;
+            } else {
+                titleEl.title = 'Rank máximo atingido!';
+            }
 
             const grupos = await getActivities(user.uid);
             const list = document.getElementById('activitiesList');

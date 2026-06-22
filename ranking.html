@@ -52,10 +52,11 @@
                 else if (i === 2) posHtml = '<span class="rank-medal">&#x1F949;</span>';
                 else posHtml = '#' + (i + 1);
 
+                const r = getRank(u.total_score);
                 const isMe = u.id === currentUserId;
                 li.innerHTML = `
                     <span class="pos">${posHtml}</span>
-                    <span class="name">${u.name}</span>
+                    <span class="name">${u.name} <span style="font-size:0.75em;color:#a8927a;">${r.icon} ${r.title}</span></span>
                     <span class="score">
                         ${u.total_score} XP
                         ${isMe ? '<span class="badge badge-warning">Voc\u00ea</span>' : ''}
