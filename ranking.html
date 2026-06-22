@@ -19,6 +19,7 @@
         <a href="index.html">&#x1F3E0; Home</a>
         <a href="dashboard.html">&#x1F5E1; Missões</a>
         <a href="ranking.html">&#x1F451; Ranking</a>
+        <a href="admin.html" id="adminLink" style="display:none;">&#x1F6E1; Admin</a>
         <a href="#" id="logoutBtn">&#x1F6AA; Sair</a>
     </div>
 
@@ -79,7 +80,11 @@
             window.location.href = 'index.html';
         });
 
-        auth.onAuthStateChanged(() => loadRanking());
+        auth.onAuthStateChanged(u => {
+            const link = document.getElementById('adminLink');
+            if (link) link.style.display = u && isAdmin(u) ? '' : 'none';
+            loadRanking();
+        });
     </script>
 </body>
 </html>

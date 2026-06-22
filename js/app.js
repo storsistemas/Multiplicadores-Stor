@@ -176,6 +176,23 @@ function getNextRank(totalXp) {
     return null;
 }
 
+// ============ ADMIN ============
+
+function isAdmin(user) {
+    return user && user.email === ADMIN_EMAIL;
+}
+
+async function updateProfileName(userId, newName) {
+    await db.collection('profiles').doc(userId).update({ name: newName });
+}
+
+async function adminAddXP(userId, xpAmount) {
+    const profile = await getProfile(userId);
+    if (!profile) throw new Error('Perfil não encontrado');
+    const newTotal = (profile.total_score || 0) + xpAmount;
+    await db.collection('profiles').doc(userId).update({ total_score: newTotal });
+}
+
 // ============ FORM HELPERS ============
 
 function showError(msg) {

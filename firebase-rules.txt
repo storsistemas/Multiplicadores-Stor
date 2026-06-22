@@ -9,20 +9,25 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Perfis: todos podem ler (ranking), só o dono escreve
+    // Admin (pode tudo)
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email == 'brayan@storsistemas.com.br';
+    }
+
+    // Perfis: todos leem, dono ou admin escreve
     match /profiles/{userId} {
       allow read: if true;
       allow create: if request.auth != null && request.auth.uid == userId;
-      allow update: if request.auth != null && request.auth.uid == userId;
-      allow delete: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      allow delete: if request.auth != null && (request.auth.uid == userId || isAdmin());
     }
 
-    // Atividades: só o dono
+    // Atividades: só o dono ou admin
     match /activities/{docId} {
-      allow read: if request.auth != null && resource.data.user_id == request.auth.uid;
+      allow read: if request.auth != null && (resource.data.user_id == request.auth.uid || isAdmin());
       allow create: if request.auth != null && request.data.user_id == request.auth.uid;
-      allow update: if request.auth != null && get(/databases/$(database)/documents/activities/$(docId)).data.user_id == request.auth.uid;
-      allow delete: if request.auth != null && get(/databases/$(database)/documents/activities/$(docId)).data.user_id == request.auth.uid;
+      allow update: if request.auth != null && (get(/databases/$(database)/documents/activities/$(docId)).data.user_id == request.auth.uid || isAdmin());
+      allow delete: if request.auth != null && (get(/databases/$(database)/documents/activities/$(docId)).data.user_id == request.auth.uid || isAdmin());
     }
   }
 }

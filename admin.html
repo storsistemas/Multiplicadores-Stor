@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Multiplicadores Stor</title>
+    <link rel="stylesheet" href="style.css?v=2">
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <script src="js/config.js?v=2"></script>
+    <script src="js/app.js?v=2"></script>
+</head>
+<body>
+    <div class="header">
+        <h1>Multiplicadores Stor — Admin</h1>
+    </div>
+    <div class="nav">
+        <a href="index.html">&#x1F3E0; Home</a>
+        <a href="dashboard.html">&#x1F5E1; Missões</a>
+        <a href="ranking.html">&#x1F451; Ranking</a>
+        <a href="admin.html">&#x1F6E1; Admin</a>
+        <a href="#" id="logoutBtn">&#x1F6AA; Sair</a>
+    </div>
+
+    <div class="container">
+        <div id="flash"></div>
+
+        <div class="card">
+            <h2>&#x1F6E1; Painel do Administrador</h2>
+
+            <div style="margin:15px 0;padding:12px;background:rgba(201,168,76,0.08);border-radius:8px;border:1px solid rgba(201,168,76,0.15);">
+                <p style="color:#a8927a;font-size:0.85em;">
+                    <strong style="color:#c9a84c;">&#x2139; Instruções:</strong><br>
+                    &#x1F539; <strong>Editar nome</strong> — clique no nome do participante para renomear<br>
+                    &#x1F539; <strong>Adicionar XP</strong> — use o botão para adicionar experiência manualmente
+                </p>
+            </div>
+
+            <div style="overflow-x:auto;">
+                <table style="width:100%;border-collapse:collapse;">
+                    <thead>
+                        <tr style="border-bottom:1px solid rgba(201,168,76,0.2);">
+                            <th style="padding:10px 8px;text-align:left;color:#c9a84c;font-family:'Cinzel',serif;font-size:0.8em;">#</th>
+                            <th style="padding:10px 8px;text-align:left;color:#c9a84c;font-family:'Cinzel',serif;font-size:0.8em;">Nome</th>
+                            <th style="padding:10px 8px;text-align:left;color:#c9a84c;font-family:'Cinzel',serif;font-size:0.8em;">E-mail</th>
+                            <th style="padding:10px 8px;text-align:center;color:#c9a84c;font-family:'Cinzel',serif;font-size:0.8em;">XP</th>
+                            <th style="padding:10px 8px;text-align:center;color:#c9a84c;font-family:'Cinzel',serif;font-size:0.8em;">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadAdmin() {
+            const user = await requireAuth();
+            if (!user) return;
+
+            if (!isAdmin(user)) {
+                document.getElementById('flash').innerHTML =
+                    '<div class="flash error">Acesso negado. Apenas o administrador pode acessar esta página.</div>';
+                document.getElementById('adminTableBody').innerHTML = '';
+                return;
+            }
+
+            const users = await getRanking();
+            const tbody = document.getElementById('adminTableBody');
+            tbody.innerHTML = '';
+
+            for (const u of users) {
+                const tr = document.createElement('tr');
+                tr.style.borderBottom = '1px solid rgba(201,168,76,0.08)';
+
+                const r = getRank(u.total_score);
+
+                tr.innerHTML = `
+                    <td style="padding:12px 8px;color:#8a7a6a;font-size:0.85em;">${u.id === user.uid ? '<span class="badge badge-warning">Admin</span>' : (users.indexOf(u) + 1)}</td>
+                    <td style="padding:12px 8px;">
+                        <span id="nameDisplay_${u.id}" style="color:#d4c5a9;">${u.name}</span>
+                        <input id="nameInput_${u.id}" value="${u.name}" style="display:none;width:180px;" class="inline-input">
+                        <button id="editBtn_${u.id}" class="btn btn-sm btn-primary" onclick="editName('${u.id}')" style="margin-left:5px;">✎</button>
+                        <button id="saveBtn_${u.id}" class="btn btn-sm btn-success" onclick="saveName('${u.id}')" style="display:none;">Salvar</button>
+                        <button id="cancelBtn_${u.id}" class="btn btn-sm btn-warning" onclick="cancelEdit('${u.id}')" style="display:none;">Cancelar</button>
+                    </td>
+                    <td style="padding:12px 8px;color:#8a7a6a;font-size:0.85em;">${u.id === user.uid ? user.email : '—'}</td>
+                    <td style="padding:12px 8px;text-align:center;color:#5cb85c;font-family:'Cinzel',serif;font-weight:600;">${u.total_score} XP</td>
+                    <td style="padding:12px 8px;text-align:center;">
+                        <div style="display:flex;gap:5px;align-items:center;justify-content:center;flex-wrap:wrap;">
+                            <input type="number" id="xpInput_${u.id}" class="inline-input" placeholder="XP" style="width:70px;text-align:center;" min="1">
+                            <button class="btn btn-sm btn-success" onclick="addXP('${u.id}')">+XP</button>
+                        </div>
+                    </td>
+                `;
+
+                tbody.appendChild(tr);
+            }
+
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="padding:30px;text-align:center;color:#8a7a6a;">Nenhum participante encontrado.</td></tr>';
+            }
+        }
+
+        async function editName(userId) {
+            document.getElementById('nameDisplay_' + userId).style.display = 'none';
+            document.getElementById('editBtn_' + userId).style.display = 'none';
+            document.getElementById('nameInput_' + userId).style.display = 'inline-block';
+            document.getElementById('saveBtn_' + userId).style.display = 'inline-block';
+            document.getElementById('cancelBtn_' + userId).style.display = 'inline-block';
+            document.getElementById('nameInput_' + userId).focus();
+        }
+
+        async function saveName(userId) {
+            const input = document.getElementById('nameInput_' + userId);
+            const name = input.value.trim();
+            if (!name) return showError('O nome não pode ficar vazio.');
+            try {
+                await updateProfileName(userId, name);
+                document.getElementById('nameDisplay_' + userId).textContent = name;
+                cancelEdit(userId);
+                showSuccess('Nome atualizado!');
+            } catch (err) {
+                showError(err.message);
+            }
+        }
+
+        function cancelEdit(userId) {
+            document.getElementById('nameDisplay_' + userId).style.display = '';
+            document.getElementById('editBtn_' + userId).style.display = '';
+            document.getElementById('nameInput_' + userId).style.display = 'none';
+            document.getElementById('saveBtn_' + userId).style.display = 'none';
+            document.getElementById('cancelBtn_' + userId).style.display = 'none';
+        }
+
+        async function addXP(userId) {
+            const input = document.getElementById('xpInput_' + userId);
+            const amount = parseInt(input.value);
+            if (!amount || amount <= 0) return showError('Informe um valor de XP válido.');
+            try {
+                await adminAddXP(userId, amount);
+                input.value = '';
+                showSuccess(amount + ' XP adicionado!');
+                loadAdmin();
+            } catch (err) {
+                showError(err.message);
+            }
+        }
+
+        document.getElementById('logoutBtn').addEventListener('click', async (e) => {
+            e.preventDefault();
+            await logout();
+            window.location.href = 'index.html';
+        });
+
+        loadAdmin();
+    </script>
+</body>
+</html>
