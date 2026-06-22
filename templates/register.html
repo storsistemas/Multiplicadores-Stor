@@ -1,0 +1,31 @@
+{% extends "layout.html" %}
+{% block title %}Cadastro - Multiplicadores Stor{% endblock %}
+{% block content %}
+<div class="auth-container">
+    <div class="card">
+        <h2>Cadastro</h2>
+        <form method="POST">
+            <div class="form-group">
+                <label for="name">Nome</label>
+                <input type="text" id="name" name="name" required placeholder="Seu nome completo">
+            </div>
+            <div class="form-group">
+                <label for="email">E-mail</label>
+                <input type="email" id="email" name="email" required placeholder="seu@email.com">
+            </div>
+            <div class="form-group">
+                <label for="password">Senha</label>
+                <input type="password" id="password" name="password" required placeholder="Sua senha">
+            </div>
+            <div class="form-group">
+                <label for="confirm_password">Confirmar Senha</label>
+                <input type="password" id="confirm_password" name="confirm_password" required placeholder="Confirme sua senha">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%;margin-top:10px">Criar Conta</button>
+        </form>
+        <p class="text-center mt-10">
+            Já tem conta? <a href="{{ url_for('login') }}">Faça login</a>
+        </p>
+    </div>
+</div>
+{% endblock %}
