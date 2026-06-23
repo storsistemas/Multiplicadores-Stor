@@ -39,7 +39,8 @@
                 </div>
                 <div class="stat">
                     <div class="stat-label">Título</div>
-                    <div class="stat-value small" id="userTitle">-</div>
+                    <div class="stat-value" id="userTitle">-</div>
+                    <div class="stat-next" id="userNextRank"></div>
                 </div>
                 <div class="stat">
                     <div class="stat-label">Experiência</div>
@@ -84,11 +85,16 @@
             const nextRank = getNextRank(profile.total_score);
             const titleEl = document.getElementById('userTitle');
             titleEl.innerHTML = rank.icon + ' ' + rank.title;
+            const nextEl = titleEl.nextElementSibling;
             if (nextRank) {
                 const needed = nextRank.xp - profile.total_score;
-                titleEl.title = 'Faltam ' + needed + ' XP para ' + nextRank.title;
+                if (needed > 0) {
+                    nextEl.textContent = needed + ' XP para ' + nextRank.icon + ' ' + nextRank.title;
+                } else {
+                    nextEl.textContent = '';
+                }
             } else {
-                titleEl.title = 'Rank máximo atingido!';
+                nextEl.textContent = 'Rank máximo atingido!';
             }
 
             const grupos = await getActivities(user.uid);
