@@ -25,6 +25,10 @@
                     <label for="password">Senha</label>
                     <input type="password" id="password" name="password" required placeholder="Sua senha">
                 </div>
+                <div class="form-group" style="display:flex;align-items:center;gap:8px;margin-top:8px">
+                    <input type="checkbox" id="remember" checked>
+                    <label for="remember" style="margin:0">Continuar conectado</label>
+                </div>
                 <button type="submit" class="btn btn-primary" style="width:100%;margin-top:10px">Entrar na Aventura</button>
             </form>
             <p class="text-center mt-10">
@@ -37,10 +41,15 @@
             e.preventDefault();
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
+            const remember = document.getElementById('remember').checked;
 
             if (!email || !password) return showError('Preencha todos os campos.');
 
             try {
+                const persistence = remember
+                    ? firebase.auth.Auth.Persistence.LOCAL
+                    : firebase.auth.Auth.Persistence.SESSION;
+                await auth.setPersistence(persistence);
                 await login(email, password);
                 window.location.href = 'dashboard.html';
             } catch (err) {
