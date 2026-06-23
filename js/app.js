@@ -27,7 +27,7 @@ const ATIVIDADES = [
     { type: 'reducao_tma', label: 'Redução de TMA no Módulo' },
 ];
 
-const ADMIN_ATIVIDADES = ['feedback_positivo', 'reducao_chamados', 'reducao_tma'];
+const ADMIN_ATIVIDADES = ['feedback_positivo', 'reducao_chamados', 'reducao_tma', 'material_aprovado'];
 
 const GRUPOS = [
     { type: 'voluntariar', label: 'Voluntariar-se para o Projeto', steps: ['voluntariar'] },
