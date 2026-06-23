@@ -27,7 +27,7 @@
         <div id="flash"></div>
 
         <div class="highlight-card">
-            <h2>&#x1F3F9; Em Destaque</h2>
+            <h2><img src="img/stor-logo.png" alt="" class="logo-rpg-sm"> Em Destaque</h2>
             <div class="stats-row">
                 <div class="stat">
                     <div class="stat-label">Nome</div>
@@ -107,7 +107,7 @@
                 const div = document.createElement('div');
                 div.className = 'activity-item' + (done ? ' completed' : '');
 
-                let html = `<div class="title">${done ? '&#x2705;' : '&#x2B1C;'} ${grupo.label}</div>`;
+                let html = `<div class="title">${getSealSvg(grupo.type, done)} ${grupo.label}</div>`;
 
                 if (grupo.type === 'voluntariar') {
                     html += `<div class="meta">
