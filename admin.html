@@ -82,6 +82,24 @@
                 </table>
             </div>
         </div>
+
+        <div class="card">
+            <h3>&#x1F4CB; Links de Materiais Enviados</h3>
+            <div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;">
+                <input type="text" id="linkSearch" class="inline-input" placeholder="Buscar por nome ou URL..." style="flex:1;min-width:200px;" oninput="renderLinks()">
+            </div>
+            <div style="overflow-x:auto;">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Participante</th>
+                            <th>Link</th>
+                        </tr>
+                    </thead>
+                    <tbody id="linksTableBody"></tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -214,6 +232,37 @@
             }
         });
 
+        let allMaterialLinks = [];
+
+        async function loadLinks() {
+            allMaterialLinks = await getMaterialLinks();
+            renderLinks();
+        }
+
+        function renderLinks() {
+            const query = document.getElementById('linkSearch').value.toLowerCase();
+            const tbody = document.getElementById('linksTableBody');
+            tbody.innerHTML = '';
+
+            const filtered = allMaterialLinks.filter(item =>
+                item.userName.toLowerCase().includes(query) ||
+                item.url.toLowerCase().includes(query)
+            );
+
+            for (const item of filtered) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="white-space:nowrap">${item.userName}</td>
+                    <td><a href="${item.url}" target="_blank" style="font-size:0.85em;word-break:break-all">${item.url}</a></td>
+                `;
+                tbody.appendChild(tr);
+            }
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="2" style="padding:20px;text-align:center;color:#8a7a6a;">Nenhum link encontrado.</td></tr>';
+            }
+        }
+
         document.getElementById('logoutBtn').addEventListener('click', async (e) => {
             e.preventDefault();
             await logout();
@@ -221,6 +270,7 @@
         });
 
         loadAdmin();
+        loadLinks();
     </script>
 </body>
 </html>

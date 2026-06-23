@@ -163,6 +163,11 @@
                     </div>`;
 
                 } else if (grupo.type === 'material_aprovado') {
+                    const allLinks = s.links || (s.link ? [s.link] : []);
+                    let linksHtml = '';
+                    for (const url of allLinks) {
+                        linksHtml += '<div style="margin:2px 0"><a href="' + url + '" target="_blank" style="font-size:0.85em;word-break:break-all">' + url + '</a></div>';
+                    }
                     html += `<div class="meta">
                         <form class="meta-row" onsubmit="return handleToggle(event, '${s.id}', 'material_aprovado')">
                             ${!done
@@ -173,11 +178,11 @@
                         </form>
                     </div>
                     <div class="link-info">
-                        <strong>Link do Material</strong>
-                        ${s.link ? `<a href="${s.link}" target="_blank">${s.link}</a>` : ''}
+                        <strong>Links do Material</strong>
+                        ${linksHtml}
                         <form class="meta-row" onsubmit="return handleLink(event, '${s.id}')" style="margin-top:4px">
-                            <input type="url" name="link" class="inline-input" placeholder="URL do material para avaliação" value="${s.link || ''}" style="width:280px">
-                            <button type="submit" class="btn btn-primary btn-sm">Enviar para Revisão</button>
+                            <input type="url" name="link" class="inline-input" placeholder="URL do material" style="width:280px" required>
+                            <button type="submit" class="btn btn-primary btn-sm">Adicionar Link</button>
                         </form>
                     </div>`;
 

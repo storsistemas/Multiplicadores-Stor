@@ -153,7 +153,32 @@ async function toggleStep(activityId, completed, updates) {
 }
 
 async function updateLink(activityId, link) {
-    await db.collection('activities').doc(activityId).update({ link });
+    await db.collection('activities').doc(activityId).update({
+        links: firebase.firestore.FieldValue.arrayUnion(link)
+    });
+}
+
+async function getMaterialLinks() {
+    const snap = await db.collection('activities')
+        .where('activity_type', '==', 'material_aprovado')
+        .get();
+    const profiles = {};
+    const result = [];
+    for (const doc of snap.docs) {
+        const data = doc.data();
+        const links = data.links || (data.link ? [data.link] : []);
+        if (links.length === 0) continue;
+        let userName = 'Desconhecido';
+        if (!profiles[data.user_id]) {
+            const p = await getProfile(data.user_id);
+            profiles[data.user_id] = p ? p.name : 'Desconhecido';
+        }
+        userName = profiles[data.user_id];
+        for (const url of links) {
+            result.push({ userId: data.user_id, userName, url, activityId: doc.id });
+        }
+    }
+    return result;
 }
 
 async function recalcScore(userId) {
