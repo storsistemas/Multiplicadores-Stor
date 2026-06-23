@@ -604,4 +604,6 @@ a:hover { color: #e8d4a0; }
 .seal-icon {
     vertical-align: middle;
     margin-right: 4px;
+    border-radius: 6px;
+    border: 1px solid rgba(201, 168, 76, 0.2);
 }
