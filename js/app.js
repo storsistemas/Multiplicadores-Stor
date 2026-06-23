@@ -79,44 +79,9 @@ function logout() {
 
 // ============ SEAL ICONS ============
 
-function getSealSvg(type, completed) {
-    const bg = completed ? '#1a2f0f' : '#1a0f0a';
-    const border = completed ? '#c9a84c' : '#4a3a2a';
-    const iconColor = completed ? '#c9a84c' : '#4a3a2a';
-    const opacity = completed ? '1' : '0.5';
-
-    const icons = {
-        voluntariar:
-            '<path d="M12 21l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3 9.24 3 10.91 3.81 12 5.08 13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21z" fill="' + iconColor + '" opacity="' + opacity + '"/>',
-        escolher_modulo:
-            '<path d="M4 6h16v2H4zM4 10h16v2H4zM4 14h12v2H4z" fill="' + iconColor + '" opacity="' + opacity + '"/>',
-        iniciar_estudos:
-            '<path d="M4 4h7v16H4zM13 4h7v16h-7z" fill="' + iconColor + '" opacity="' + opacity + '"/>' +
-            '<path d="M6 8h3v2H6zM6 12h3v2H6zM15 8h3v2h-3zM15 12h3v2h-3z" fill="' + bg + '" opacity="' + opacity + '"/>',
-        concluir_estudos:
-            '<path d="M4 14l2-6 6 3 6-3 2 6H4z" fill="' + iconColor + '" opacity="' + opacity + '"/>',
-        iniciar_material:
-            '<path d="M16 3c-2 2-4 6-3 9l-7 7 2 2 7-7c3 1 7-1 9-3l-8-8z" fill="' + iconColor + '" opacity="' + opacity + '"/>',
-        material_aprovado:
-            '<path d="M12 2l8 4v6c0 4-3.5 7.5-8 9-4.5-1.5-8-5-8-9V6l8-4z" fill="' + iconColor + '" opacity="' + opacity + '"/>' +
-            '<path d="M9 12l2 2 4-4" stroke="' + bg + '" stroke-width="2" fill="none" opacity="' + opacity + '"/>',
-        ministrar_aula:
-            '<path d="M8 4h8v2H8zM6 10h12v2H6zM10 12h4v8h-4z" fill="' + iconColor + '" opacity="' + opacity + '"/>',
-        feedback_positivo:
-            '<path d="M12 2l2.5 7.5H22l-6 4.5 2.5 7.5L12 17l-6.5 4.5L8 14l-6-4.5h7.5L12 2z" fill="' + iconColor + '" opacity="' + opacity + '"/>',
-        reducao_chamados:
-            '<path d="M12 4v10l-4-4 4 4 4-4-4 4zM5 18h14v2H5z" fill="' + iconColor + '" opacity="' + opacity + '"/>',
-        reducao_tma:
-            '<path d="M6 2h12v4l-4 5 4 5v4H6v-4l4-5-4-5V2zm2 2v2l4 5-4 5v2h8v-2l-4-5 4-5V4H8z" fill="' + iconColor + '" opacity="' + opacity + '"/>',
-    };
-
-    const icon = icons[type] || icons.voluntariar;
-
-    return '<svg class="seal-icon" viewBox="0 0 24 24" width="20" height="20">' +
-        '<circle cx="12" cy="12" r="11" fill="' + bg + '" stroke="' + border + '" stroke-width="1.5"/>' +
-        '<circle cx="12" cy="12" r="9" fill="none" stroke="' + border + '" stroke-width="0.5" opacity="0.3"/>' +
-        icon +
-        '</svg>';
+function getSealIcon(type, completed) {
+    const mask = completed ? '' : ' style="filter:grayscale(1);opacity:0.5"';
+    return '<img src="img/seal-' + type + '.png" alt="" class="seal-icon" width="22" height="22"' + mask + '>';
 }
 
 // ============ PROFILE ============

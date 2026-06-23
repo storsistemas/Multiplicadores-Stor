@@ -107,7 +107,7 @@
                 const div = document.createElement('div');
                 div.className = 'activity-item' + (done ? ' completed' : '');
 
-                let html = `<div class="title">${getSealSvg(grupo.type, done)} ${grupo.label}</div>`;
+                let html = `<div class="title">${getSealIcon(grupo.type, done)} ${grupo.label}</div>`;
 
                 if (grupo.type === 'voluntariar') {
                     html += `<div class="meta">
