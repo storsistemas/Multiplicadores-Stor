@@ -152,28 +152,17 @@
                     </div>`;
 
                 } else if (grupo.type === 'iniciar_material') {
-                    html += `<div class="meta">
-                        <form class="meta-row" onsubmit="return handleToggle(event, '${s.id}', 'iniciar_material')">
-                            ${!done
-                                ? `<input type="date" name="data_inicio" class="inline-input" required>
-                                   <button type="submit" class="btn btn-success btn-sm">Iniciar</button>`
-                                : `<strong>Data de início:</strong> ${s.data_inicio || '-'}
-                                   <button type="submit" class="btn btn-warning btn-sm">Desfazer</button>`}
-                        </form>
-                    </div>`;
-
-                } else if (grupo.type === 'material_aprovado') {
                     const allLinks = s.links || (s.link ? [s.link] : []);
                     let linksHtml = '';
                     for (const url of allLinks) {
                         linksHtml += '<div style="margin:2px 0"><a href="' + url + '" target="_blank" style="font-size:0.85em;word-break:break-all">' + url + '</a></div>';
                     }
                     html += `<div class="meta">
-                        <form class="meta-row" onsubmit="return handleToggle(event, '${s.id}', 'material_aprovado')">
+                        <form class="meta-row" onsubmit="return handleToggle(event, '${s.id}', 'iniciar_material')">
                             ${!done
                                 ? `<input type="date" name="data_inicio" class="inline-input" required>
-                                   <button type="submit" class="btn btn-success btn-sm">Aprovar Material</button>`
-                                : `<strong>Data de aprovação:</strong> ${s.data_inicio || '-'}
+                                   <button type="submit" class="btn btn-success btn-sm">Iniciar</button>`
+                                : `<strong>Data de início:</strong> ${s.data_inicio || '-'}
                                    <button type="submit" class="btn btn-warning btn-sm">Desfazer</button>`}
                         </form>
                     </div>
@@ -183,6 +172,17 @@
                         <form class="meta-row" onsubmit="return handleLink(event, '${s.id}')" style="margin-top:4px">
                             <input type="url" name="link" class="inline-input" placeholder="URL do material" style="width:280px" required>
                             <button type="submit" class="btn btn-primary btn-sm">Adicionar Link</button>
+                        </form>
+                    </div>`;
+
+                } else if (grupo.type === 'material_aprovado') {
+                    html += `<div class="meta">
+                        <form class="meta-row" onsubmit="return handleToggle(event, '${s.id}', 'material_aprovado')">
+                            ${!done
+                                ? `<input type="date" name="data_inicio" class="inline-input" required>
+                                   <button type="submit" class="btn btn-success btn-sm">Aprovar Material</button>`
+                                : `<strong>Data de aprovação:</strong> ${s.data_inicio || '-'}
+                                   <button type="submit" class="btn btn-warning btn-sm">Desfazer</button>`}
                         </form>
                     </div>`;
 

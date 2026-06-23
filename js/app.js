@@ -160,7 +160,7 @@ async function updateLink(activityId, link) {
 
 async function getMaterialLinks() {
     const snap = await db.collection('activities')
-        .where('activity_type', '==', 'material_aprovado')
+        .where('activity_type', '==', 'iniciar_material')
         .get();
     const profiles = {};
     const result = [];
