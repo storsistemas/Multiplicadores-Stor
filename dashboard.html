@@ -73,7 +73,7 @@
                     '<p class="text-center" style="padding:20px;color:#8a7a6a;">Perfil não encontrado.</p>';
                 return;
             }
-            document.getElementById('userName').textContent = profile.nome;
+            document.getElementById('userName').textContent = capitalizeName(profile.nome);
             document.getElementById('userScore').textContent = profile.total_score + ' XP';
 
             const ranking = await getRanking();
