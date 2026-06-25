@@ -382,6 +382,7 @@
 
         function populateMissionSelect(users) {
             const sel = document.getElementById('missionUser');
+            const prevValue = sel.value;
             sel.innerHTML = '<option value="">Selecione...</option>';
             for (const u of users) {
                 const opt = document.createElement('option');
@@ -389,6 +390,7 @@
                 opt.textContent = u.nome + ' (' + u.total_score + ' XP)';
                 sel.appendChild(opt);
             }
+            if (prevValue) sel.value = prevValue;
         }
 
         async function loadUserMissions() {
