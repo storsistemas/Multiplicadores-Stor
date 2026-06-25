@@ -193,6 +193,12 @@ async function updateLink(activityId, link) {
     });
 }
 
+async function removeLink(activityId, link) {
+    await activitiesRef().doc(activityId).update({
+        links: firebase.firestore.FieldValue.arrayRemove(link)
+    });
+}
+
 async function getMaterialLinks() {
     const snap = await activitiesRef()
         .where('activity_type', '==', 'iniciar_material')

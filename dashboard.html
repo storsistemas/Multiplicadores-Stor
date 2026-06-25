@@ -168,7 +168,11 @@
                         const allLinks = s.links || (s.link ? [s.link] : []);
                         let linksHtml = '';
                         for (const url of allLinks) {
-                            linksHtml += '<div style="margin:2px 0"><a href="' + url + '" target="_blank" style="font-size:0.85em;word-break:break-all">' + url + '</a></div>';
+                            const safeUrl = url.replace(/'/g, "\\'");
+                            linksHtml += '<div style="margin:2px 0;display:flex;align-items:center;gap:6px;">' +
+                                '<a href="' + url + '" target="_blank" style="font-size:0.85em;word-break:break-all;flex:1">' + url + '</a>' +
+                                '<button onclick="deleteLink(\'' + safeUrl + '\',\'' + s.id + '\')" style="background:none;border:none;color:#d9534f;cursor:pointer;font-size:1.1em;padding:0 4px;" title="Remover link">&times;</button>' +
+                                '</div>';
                         }
                         html += `<div class="meta">
                             <form class="meta-row" onsubmit="return handleToggle(event, '${s.id}', 'iniciar_material')">
@@ -281,6 +285,17 @@
                 showError(err.message);
             }
             return false;
+        }
+
+        async function deleteLink(url, activityId) {
+            if (!confirm('Remover este link?')) return;
+            try {
+                await removeLink(activityId, url);
+                showSuccess('Link removido!');
+                loadDashboard();
+            } catch (err) {
+                showError(err.message);
+            }
         }
 
         document.getElementById('logoutBtn').addEventListener('click', async (e) => {
