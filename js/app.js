@@ -3,7 +3,6 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 db.settings({ merge: true });
 
-// Valores ocultos do usuário
 const PONTOS = {
     voluntariar: 100,
     escolher_modulo: 100,
@@ -46,14 +45,19 @@ const GRUPOS = [
 
 async function register(name, email, password) {
     const cred = await auth.createUserWithEmailAndPassword(email, password);
-    await db.collection('profiles').doc(cred.user.uid).set({
-        name,
+    await db.collection('usuarios').doc(cred.user.uid).set({
+        nome: name,
+        email: email,
+        role: 'colaborador',
+        status: 'pendente',
         total_score: 0,
-        created_at: firebase.firestore.FieldValue.serverTimestamp(),
+        criado_em: firebase.firestore.FieldValue.serverTimestamp(),
+        aprovado_em: null,
+        aprovado_por: null,
     });
     const batch = db.batch();
     for (const a of ATIVIDADES) {
-        const ref = db.collection('activities').doc();
+        const ref = db.collection('modulos_sistema').doc('atividades').collection('lista').doc();
         batch.set(ref, {
             user_id: cred.user.uid,
             activity_type: a.type,
@@ -77,6 +81,24 @@ function logout() {
     return auth.signOut();
 }
 
+let _adminCache = null;
+
+async function isAdmin(user) {
+    if (!user) return false;
+    if (_adminCache !== null) return _adminCache;
+    try {
+        const doc = await db.collection('usuarios').doc(user.uid).get();
+        _adminCache = doc.exists && doc.data().role === 'admin';
+    } catch {
+        _adminCache = false;
+    }
+    return _adminCache;
+}
+
+function clearAdminCache() {
+    _adminCache = null;
+}
+
 // ============ SEAL ICONS ============
 
 function getSealIcon(type, completed) {
@@ -84,15 +106,16 @@ function getSealIcon(type, completed) {
     return '<img src="img/seal-' + type + '.png" alt="" class="seal-icon" width="22" height="22"' + mask + '>';
 }
 
-// ============ PROFILE ============
+// ============ USUARIO ============
 
 async function getProfile(userId) {
-    const doc = await db.collection('profiles').doc(userId).get();
+    const doc = await db.collection('usuarios').doc(userId).get();
     return doc.exists ? { id: doc.id, ...doc.data() } : null;
 }
 
 async function getRanking() {
-    const snap = await db.collection('profiles')
+    const snap = await db.collection('usuarios')
+        .where('status', '==', 'aprovado')
         .orderBy('total_score', 'desc')
         .get();
     return snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -100,8 +123,12 @@ async function getRanking() {
 
 // ============ ACTIVITIES ============
 
+function activitiesRef() {
+    return db.collection('modulos_sistema').doc('atividades').collection('lista');
+}
+
 async function ensureActivities(userId) {
-    const snap = await db.collection('activities')
+    const snap = await activitiesRef()
         .where('user_id', '==', userId)
         .get();
 
@@ -111,7 +138,7 @@ async function ensureActivities(userId) {
     let added = 0;
     for (const a of ATIVIDADES) {
         if (!existing.has(a.type)) {
-            const ref = db.collection('activities').doc();
+            const ref = activitiesRef().doc();
             batch.set(ref, {
                 user_id: userId,
                 activity_type: a.type,
@@ -132,7 +159,7 @@ async function ensureActivities(userId) {
 async function getActivities(userId) {
     await ensureActivities(userId);
 
-    const snap = await db.collection('activities')
+    const snap = await activitiesRef()
         .where('user_id', '==', userId)
         .get();
 
@@ -149,31 +176,31 @@ async function toggleStep(activityId, completed, updates) {
     if (updates.data_termino !== undefined) data.data_termino = updates.data_termino;
     if (updates.modulo !== undefined) data.modulo = updates.modulo;
 
-    await db.collection('activities').doc(activityId).update(data);
+    await activitiesRef().doc(activityId).update(data);
 }
 
 async function updateLink(activityId, link) {
-    await db.collection('activities').doc(activityId).update({
+    await activitiesRef().doc(activityId).update({
         links: firebase.firestore.FieldValue.arrayUnion(link)
     });
 }
 
 async function getMaterialLinks() {
-    const snap = await db.collection('activities')
+    const snap = await activitiesRef()
         .where('activity_type', '==', 'iniciar_material')
         .get();
-    const profiles = {};
+    const usuarios = {};
     const result = [];
     for (const doc of snap.docs) {
         const data = doc.data();
         const links = data.links || (data.link ? [data.link] : []);
         if (links.length === 0) continue;
         let userName = 'Desconhecido';
-        if (!profiles[data.user_id]) {
+        if (!usuarios[data.user_id]) {
             const p = await getProfile(data.user_id);
-            profiles[data.user_id] = p ? p.name : 'Desconhecido';
+            usuarios[data.user_id] = p ? p.nome : 'Desconhecido';
         }
-        userName = profiles[data.user_id];
+        userName = usuarios[data.user_id];
         for (const url of links) {
             result.push({ userId: data.user_id, userName, url, activityId: doc.id });
         }
@@ -182,12 +209,12 @@ async function getMaterialLinks() {
 }
 
 async function recalcScore(userId) {
-    const snap = await db.collection('activities')
+    const snap = await activitiesRef()
         .where('user_id', '==', userId)
         .where('completed', '==', true)
         .get();
     const total = snap.docs.reduce((s, d) => s + (d.data().pontos || 0), 0);
-    await db.collection('profiles').doc(userId).update({ total_score: total });
+    await db.collection('usuarios').doc(userId).update({ total_score: total });
 }
 
 // ============ RANK SYSTEM ============
@@ -218,23 +245,19 @@ function getNextRank(totalXp) {
 
 // ============ ADMIN ============
 
-function isAdmin(user) {
-    return user && user.email === ADMIN_EMAIL;
-}
-
 async function updateProfileName(userId, newName) {
-    await db.collection('profiles').doc(userId).update({ name: newName });
+    await db.collection('usuarios').doc(userId).update({ nome: newName });
 }
 
 async function adminAddXP(userId, xpAmount) {
     const profile = await getProfile(userId);
     if (!profile) throw new Error('Perfil não encontrado');
     const newTotal = (profile.total_score || 0) + xpAmount;
-    await db.collection('profiles').doc(userId).update({ total_score: newTotal });
+    await db.collection('usuarios').doc(userId).update({ total_score: newTotal });
 }
 
 async function adminAssignActivity(userId, activityType, xpAmount) {
-    const snap = await db.collection('activities')
+    const snap = await activitiesRef()
         .where('user_id', '==', userId)
         .where('activity_type', '==', activityType)
         .get();
@@ -243,7 +266,7 @@ async function adminAssignActivity(userId, activityType, xpAmount) {
         const doc = snap.docs[0];
         await doc.ref.update({ completed: true, pontos: xpAmount });
     } else {
-        await db.collection('activities').add({
+        await activitiesRef().add({
             user_id: userId,
             activity_type: activityType,
             completed: true,
@@ -255,6 +278,44 @@ async function adminAssignActivity(userId, activityType, xpAmount) {
         });
     }
     await recalcScore(userId);
+}
+
+// ============ APPROVAL ============
+
+async function requireApproved() {
+    const user = await requireAuth();
+    if (!user) return false;
+    const admin = await isAdmin(user);
+    if (admin) return true;
+    const profile = await getProfile(user.uid);
+    if (!profile || profile.status !== 'aprovado') {
+        window.location.href = 'aguardando.html';
+        return false;
+    }
+    return true;
+}
+
+async function getPendingUsers() {
+    const snap = await db.collection('usuarios')
+        .where('status', '==', 'pendente')
+        .orderBy('criado_em', 'asc')
+        .get();
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+async function approveUser(userId) {
+    const user = auth.currentUser;
+    await db.collection('usuarios').doc(userId).update({
+        status: 'aprovado',
+        aprovado_em: firebase.firestore.FieldValue.serverTimestamp(),
+        aprovado_por: user ? user.email || user.uid : 'admin',
+    });
+}
+
+async function reprovarUser(userId) {
+    await db.collection('usuarios').doc(userId).update({
+        status: 'reprovado',
+    });
 }
 
 // ============ FORM HELPERS ============

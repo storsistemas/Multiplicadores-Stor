@@ -55,7 +55,7 @@
             try {
                 await register(name, email, password);
                 showSuccess('Conta criada com sucesso! Redirecionando...');
-                setTimeout(() => window.location.href = 'dashboard.html', 2000);
+                setTimeout(() => window.location.href = 'aguardando.html', 2000);
             } catch (err) {
                 showError(err.message);
             }

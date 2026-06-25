@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aguardando Aprovação - Multiplicadores Stor</title>
+    <link rel="stylesheet" href="style.css?v=2">
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <script src="js/config.js?v=2"></script>
+    <script src="js/app.js?v=2"></script>
+</head>
+<body>
+    <div class="container auth-container">
+        <div class="card">
+            <h2><img src="img/stor-logo.png" alt="" class="logo-rpg-sm"> Aguardando Aprovação</h2>
+            <div id="flash"></div>
+            <div class="text-center" style="padding:20px 0;">
+                <div style="font-size:3em;margin-bottom:15px;">&#x23F3;</div>
+                <p style="font-size:1.1em;color:#c9a84c;">Seu personagem foi criado com sucesso!</p>
+                <p style="color:#a8927a;">Agora aguarde o administrador aprovar seu acesso.</p>
+                <p style="color:#8a7a6a;font-size:0.9em;margin-top:15px;">Você será redirecionado automaticamente assim que for aprovado.</p>
+            </div>
+            <button onclick="checkApproval()" class="btn btn-outline" style="width:100%;margin-top:10px">Verificar Agora</button>
+            <p class="text-center mt-10">
+                <a href="#" id="logoutBtn" style="color:#8a7a6a;">Sair</a>
+            </p>
+        </div>
+    </div>
+    <script>
+        let checkInterval;
+
+        async function checkApproval() {
+            const user = auth.currentUser;
+            if (!user) { window.location.href = 'login.html'; return; }
+            const admin = await isAdmin(user);
+            if (admin) { window.location.href = 'dashboard.html'; return; }
+            try {
+                const profile = await getProfile(user.uid);
+                if (profile && profile.status === 'aprovado') {
+                    window.location.href = 'dashboard.html';
+                } else {
+                    showError('Você ainda não foi aprovado pelo administrador.');
+                }
+            } catch (err) {
+                showError('Erro ao verificar. Tente novamente.');
+            }
+        }
+
+        auth.onAuthStateChanged(async user => {
+            if (!user) { window.location.href = 'login.html'; return; }
+            const admin = await isAdmin(user);
+            if (admin) { window.location.href = 'dashboard.html'; return; }
+            const profile = await getProfile(user.uid);
+            if (profile && profile.status === 'aprovado') {
+                window.location.href = 'dashboard.html';
+            }
+            if (checkInterval) clearInterval(checkInterval);
+            checkInterval = setInterval(async () => {
+                const u = auth.currentUser;
+                if (!u) { clearInterval(checkInterval); return; }
+                const p = await getProfile(u.uid);
+                if (p && p.status === 'aprovado') {
+                    clearInterval(checkInterval);
+                    window.location.href = 'dashboard.html';
+                }
+            }, 5000);
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', async (e) => {
+            e.preventDefault();
+            if (checkInterval) clearInterval(checkInterval);
+            clearAdminCache();
+            await logout();
+            window.location.href = 'index.html';
+        });
+    </script>
+</body>
+</html>

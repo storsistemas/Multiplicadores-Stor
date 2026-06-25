@@ -51,14 +51,33 @@
                     : firebase.auth.Auth.Persistence.SESSION;
                 await auth.setPersistence(persistence);
                 await login(email, password);
+                const user = auth.currentUser;
+                const admin = await isAdmin(user);
+                if (!admin) {
+                    const profile = await getProfile(user.uid);
+                    if (!profile || profile.status !== 'aprovado') {
+                        window.location.href = 'aguardando.html';
+                        return;
+                    }
+                }
                 window.location.href = 'dashboard.html';
             } catch (err) {
                 showError(err.message);
             }
         });
 
-        auth.onAuthStateChanged(user => {
-            if (user) window.location.href = 'dashboard.html';
+        auth.onAuthStateChanged(async user => {
+            if (user) {
+                const admin = await isAdmin(user);
+                if (!admin) {
+                    const profile = await getProfile(user.uid);
+                    if (!profile || profile.status !== 'aprovado') {
+                        window.location.href = 'aguardando.html';
+                        return;
+                    }
+                }
+                window.location.href = 'dashboard.html';
+            }
         });
     </script>
 </body>

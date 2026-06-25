@@ -33,8 +33,11 @@
 
     <script>
         async function loadRanking() {
-            const user = auth.currentUser;
-            const currentUserId = user?.uid;
+            const user = await requireAuth();
+            if (!user) return;
+            const approved = await requireApproved();
+            if (!approved) return;
+            const currentUserId = user.uid;
 
             const users = await getRanking();
             const list = document.getElementById('rankingList');
@@ -64,7 +67,7 @@
                 const isMe = u.id === currentUserId;
                 li.innerHTML = `
                     <span class="pos">${posHtml}</span>
-                    <span class="name">${u.name} <span class="title-tag">${r.icon} ${r.title}</span></span>
+                    <span class="name">${u.nome} <span class="title-tag">${r.icon} ${r.title}</span></span>
                     <span class="score">
                         ${u.total_score} XP
                         ${isMe ? '<span class="badge badge-warning">Voc\u00ea</span>' : ''}
@@ -76,13 +79,17 @@
 
         document.getElementById('logoutBtn').addEventListener('click', async (e) => {
             e.preventDefault();
+            clearAdminCache();
             await logout();
             window.location.href = 'index.html';
         });
 
-        auth.onAuthStateChanged(u => {
+        auth.onAuthStateChanged(async u => {
             const link = document.getElementById('adminLink');
-            if (link) link.style.display = u && isAdmin(u) ? '' : 'none';
+            if (link) {
+                const admin = u ? await isAdmin(u) : false;
+                link.style.display = admin ? '' : 'none';
+            }
             loadRanking();
         });
     </script>

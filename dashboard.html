@@ -60,6 +60,8 @@
         async function loadDashboard() {
             const user = await requireAuth();
             if (!user) return;
+            const approved = await requireApproved();
+            if (!approved) return;
             currentUser = user;
 
             const profile = await getProfile(user.uid);
@@ -71,7 +73,7 @@
                     '<p class="text-center" style="padding:20px;color:#8a7a6a;">Perfil não encontrado.</p>';
                 return;
             }
-            document.getElementById('userName').textContent = profile.name;
+            document.getElementById('userName').textContent = profile.nome;
             document.getElementById('userScore').textContent = profile.total_score + ' XP';
 
             const ranking = await getRanking();
@@ -207,7 +209,7 @@
             const fd = new FormData(form);
             const userId = currentUser.uid;
 
-            const snap = await db.collection('activities').where('user_id', '==', userId).get();
+            const snap = await activitiesRef().where('user_id', '==', userId).get();
             const acts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             const act = acts.find(a => a.id === activityId);
             if (!act) return;
@@ -271,13 +273,17 @@
 
         document.getElementById('logoutBtn').addEventListener('click', async (e) => {
             e.preventDefault();
+            clearAdminCache();
             await logout();
             window.location.href = 'index.html';
         });
 
-        auth.onAuthStateChanged(u => {
+        auth.onAuthStateChanged(async u => {
             const link = document.getElementById('adminLink');
-            if (link) link.style.display = u && isAdmin(u) ? '' : 'none';
+            if (link) {
+                const admin = u ? await isAdmin(u) : false;
+                link.style.display = admin ? '' : 'none';
+            }
         });
 
         loadDashboard();

@@ -34,8 +34,29 @@
                     <strong style="color:#c9a84c;">&#x2139; Instruções:</strong><br>
                     &#x1F539; <strong>Editar nome</strong> — clique no ✎ ao lado do nome do participante<br>
                     &#x1F539; <strong>+XP direto</strong> — adiciona XP avulso (não vincula a nenhuma atividade)<br>
-                    &#x1F539; <strong>Atividades do Admin</strong> — atribui XP vinculado a uma atividade específica
+                    &#x1F539; <strong>Atividades do Admin</strong> — atribui XP vinculado a uma atividade específica<br>
+                    &#x1F539; <strong>Aprovar usuários</strong> — libera o acesso de novos participantes
                 </p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>&#x1F9F1; Usuários Pendentes de Aprovação</h3>
+            <div style="overflow-x:auto;">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Nome</th>
+                            <th>E-mail</th>
+                            <th>Data de Cadastro</th>
+                            <th class="td-center">Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pendingTableBody">
+                        <tr><td colspan="5" style="padding:20px;text-align:center;color:#8a7a6a;">Carregando...</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
@@ -110,16 +131,70 @@
             const user = await requireAuth();
             if (!user) return;
 
-            if (!isAdmin(user)) {
+            const admin = await isAdmin(user);
+            if (!admin) {
                 document.getElementById('flash').innerHTML =
                     '<div class="flash error">Acesso negado. Apenas o administrador pode acessar esta página.</div>';
                 document.getElementById('adminTableBody').innerHTML = '';
+                document.getElementById('pendingTableBody').innerHTML = '';
                 return;
             }
 
             adminUsers = await getRanking();
             renderTable(adminUsers, user);
             populateSelect(adminUsers);
+            loadPendingUsers();
+        }
+
+        async function loadPendingUsers() {
+            const tbody = document.getElementById('pendingTableBody');
+            try {
+                const pending = await getPendingUsers();
+                if (pending.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="padding:20px;text-align:center;color:#5cb85c;">Nenhum usuário pendente.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = '';
+                for (const u of pending) {
+                    const tr = document.createElement('tr');
+                    const created = u.criado_em
+                        ? new Date(u.criado_em.seconds * 1000).toLocaleString('pt-BR')
+                        : '-';
+                    tr.innerHTML = `
+                        <td>${pending.indexOf(u) + 1}</td>
+                        <td>${u.nome}</td>
+                        <td style="font-size:0.85em;color:#a8927a;">${u.email || u.id}</td>
+                        <td style="font-size:0.85em;">${created}</td>
+                        <td class="td-center">
+                            <button class="btn btn-sm btn-success" onclick="approvePending('${u.id}')">&#x2713; Aprovar</button>
+                            <button class="btn btn-sm btn-warning" onclick="reprovarPending('${u.id}')">&#x2717; Reprovar</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                }
+            } catch (err) {
+                tbody.innerHTML = '<tr><td colspan="5" style="padding:20px;text-align:center;color:#d9534f;">Erro ao carregar: ' + err.message + '</td></tr>';
+            }
+        }
+
+        async function approvePending(userId) {
+            try {
+                await approveUser(userId);
+                showSuccess('Usuário aprovado com sucesso!');
+                loadAdmin();
+            } catch (err) {
+                showError(err.message);
+            }
+        }
+
+        async function reprovarPending(userId) {
+            try {
+                await reprovarUser(userId);
+                showSuccess('Usuário reprovado.');
+                loadAdmin();
+            } catch (err) {
+                showError(err.message);
+            }
         }
 
         function renderTable(users, currentUser) {
@@ -133,8 +208,8 @@
                 tr.innerHTML = `
                     <td class="td-meta">${u.id === currentUser.uid ? '<span class="badge badge-warning">Admin</span>' : (users.indexOf(u) + 1)}</td>
                     <td>
-                        <span class="name-wrap" id="nameDisplay_${u.id}">${u.name}</span>
-                        <input id="nameInput_${u.id}" value="${u.name}" style="display:none;width:160px;" class="inline-input">
+                        <span class="name-wrap" id="nameDisplay_${u.id}">${u.nome}</span>
+                        <input id="nameInput_${u.id}" value="${u.nome || ''}" style="display:none;width:160px;" class="inline-input">
                         <div class="inline-actions" style="display:inline-flex;">
                             <button id="editBtn_${u.id}" class="btn btn-sm btn-primary" onclick="editName('${u.id}')">✎</button>
                             <button id="saveBtn_${u.id}" class="btn btn-sm btn-success" onclick="saveName('${u.id}')" style="display:none;">Salvar</button>
@@ -164,7 +239,7 @@
             for (const u of users) {
                 const opt = document.createElement('option');
                 opt.value = u.id;
-                opt.textContent = u.name + ' (' + u.total_score + ' XP)';
+                opt.textContent = u.nome + ' (' + u.total_score + ' XP)';
                 sel.appendChild(opt);
             }
         }
@@ -266,6 +341,7 @@
 
         document.getElementById('logoutBtn').addEventListener('click', async (e) => {
             e.preventDefault();
+            clearAdminCache();
             await logout();
             window.location.href = 'index.html';
         });

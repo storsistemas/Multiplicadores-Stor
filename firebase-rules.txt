@@ -9,26 +9,62 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Admin (pode tudo)
-    function isAdmin() {
-      return request.auth != null && request.auth.token.email == 'brayan@storsistemas.com.br';
+    // ---------------------------------------------------------------
+    // COLEÇÃO: usuarios
+    // Armazena dados de autenticação/autorização de cada usuário.
+    // Estrutura do documento:
+    //   uid (id doc)
+    //   nome: string
+    //   email: string
+    //   role: 'admin' | 'colaborador'
+    //   status: 'pendente' | 'aprovado'
+    //   total_score: number
+    //   criado_em: timestamp
+    //   aprovado_em: timestamp (nullable)
+    //   aprovado_por: string (nullable)
+    // ---------------------------------------------------------------
+
+    match /usuarios/{userId} {
+
+      // Verifica se o usuário logado é admin
+      function isAdmin() {
+        return request.auth != null &&
+          get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.role == 'admin';
+      }
+
+      // Verifica se o usuário logado está aprovado
+      function isAprovado() {
+        return request.auth != null &&
+          get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.status == 'aprovado';
+      }
+
+      // Leitura:
+      // - Dono lê o próprio documento
+      // - Admin lê tudo
+      // - Usuários aprovados também podem ler (necessário para ranking)
+      allow read: if request.auth != null && (
+        request.auth.uid == userId ||
+        isAdmin() ||
+        isAprovado()
+      );
+
+      // Criação: só o próprio usuário, com status obrigatoriamente 'pendente'
+      allow create: if request.auth != null &&
+        request.auth.uid == userId &&
+        request.resource.data.status == 'pendente';
+
+      // Atualização/Exclusão: apenas admin (para aprovar, alterar role, etc.)
+      allow update, delete: if isAdmin();
     }
 
-    // Perfis: todos leem, dono ou admin escreve
-    match /profiles/{userId} {
-      allow read: if true;
-      allow create: if request.auth != null && request.auth.uid == userId;
-      allow update: if request.auth != null && (request.auth.uid == userId || isAdmin());
-      allow delete: if request.auth != null && (request.auth.uid == userId || isAdmin());
+    // ---------------------------------------------------------------
+    // DEMAIS MÓDULOS (atividades, módulos do sistema, etc.)
+    // ---------------------------------------------------------------
+    match /modulos_sistema/{document=**} {
+      // Apenas usuários aprovados ou admin podem ler/escrever
+      allow read, write: if isAprovado() || isAdmin();
     }
 
-    // Atividades: só o dono ou admin
-    match /activities/{docId} {
-      allow read: if request.auth != null && (resource.data.user_id == request.auth.uid || isAdmin());
-      allow create: if request.auth != null && request.data.user_id == request.auth.uid;
-      allow update: if request.auth != null && (get(/databases/$(database)/documents/activities/$(docId)).data.user_id == request.auth.uid || isAdmin());
-      allow delete: if request.auth != null && (get(/databases/$(database)/documents/activities/$(docId)).data.user_id == request.auth.uid || isAdmin());
-    }
   }
 }
 
@@ -38,11 +74,51 @@ CONFIGURAÇÃO DO FIREBASE AUTH
 
 Firebase Console > Authentication > Sign-in method:
 - Habilitar "E-mail/Senha"
-- (Opcional) Desabilitar "Verificar e-mail" em Templates
+
+====================================================================
+FLUXO DE APROVAÇÃO
+====================================================================
+
+1. Usuário se cadastra → documento em /usuarios/{uid} com status:'pendente'
+2. Usuário tenta acessar o dashboard → redirecionado para aguardando.html
+3. Admin vê usuários pendentes no painel Admin e clica "Aprovar"
+4. Admin atualiza status para 'aprovado' no documento do usuário
+5. Usuário é redirecionado automaticamente para o dashboard
+
+====================================================================
+CRIAR ADMIN INICIAL (MANUAL - VIA CONSOLE)
+====================================================================
+
+1. Crie um usuário pelo formulário de cadastro normalmente
+2. No Firebase Console > Firestore > Coleção "usuarios"
+3. Edite o documento do admin: role: "admin", status: "aprovado"
+
+====================================================================
+CRIAR ADMIN INICIAL (VIA SCRIPT - RECOMENDADO)
+====================================================================
+
+1. Crie o usuário admin pelo formulário de cadastro (register.html)
+2. No Firebase Console > Configurações > Contas de Serviço >
+   "Gerar nova chave privada" → salvar como serviceAccountKey.json
+   na raiz do projeto
+
+3. Instale as dependências:
+   cd scripts
+   npm install
+
+4. Execute o seed:
+   node scripts/seed-admin.js
+
+O script vai buscar o usuário pelo e-mail (brayan@storsistemas.com.br)
+e criar/atualizar o documento dele com role: "admin", status: "aprovado".
+
+ATENÇÃO: serviceAccountKey.json está no .gitignore e NUNCA deve
+ser commitado.
 
 ====================================================================
 ÍNDICES DO FIRESTORE
 ====================================================================
 
-O Firebase cria índices automaticamente para consultas simples.
-Se aparecer erro de índice, clique no link do erro no console.
+Índice necessário para listar usuários pendentes:
+  Collection: usuarios
+  Fields: status (asc), criado_em (asc)
