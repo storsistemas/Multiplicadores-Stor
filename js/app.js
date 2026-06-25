@@ -43,11 +43,19 @@ const GRUPOS = [
 
 // ============ AUTH ============
 
+function capitalizeName(name) {
+    return name
+        .trim()
+        .split(/\s+/)
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(' ');
+}
+
 async function register(name, email, password) {
     const cred = await auth.createUserWithEmailAndPassword(email, password);
     const isAdminUser = email === ADMIN_EMAIL;
     await db.collection('usuarios').doc(cred.user.uid).set({
-        nome: name,
+        nome: capitalizeName(name),
         email: email,
         role: isAdminUser ? 'admin' : 'colaborador',
         status: 'pendente',
@@ -246,7 +254,7 @@ function getNextRank(totalXp) {
 // ============ ADMIN ============
 
 async function updateProfileName(userId, newName) {
-    await db.collection('usuarios').doc(userId).update({ nome: newName });
+    await db.collection('usuarios').doc(userId).update({ nome: capitalizeName(newName) });
 }
 
 async function adminAddXP(userId, xpAmount) {
