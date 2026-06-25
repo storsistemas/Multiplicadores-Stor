@@ -119,6 +119,10 @@ ser commitado.
 ÍNDICES DO FIRESTORE
 ====================================================================
 
-Índice necessário para listar usuários pendentes:
-  Collection: usuarios
-  Fields: status (asc), criado_em (asc)
+O Firestore cria índices de campo único automaticamente.
+Os índices abaixo são criados automaticamente (não precisa fazer nada):
+  - usuarios > total_score (desc) → usado pelo ranking
+  - usuarios > status (asc) → usado pela listagem de pendentes
+
+Se aparecer erro de índice no console, clique no link ou crie manualmente:
+  Firebase Console > Firestore Database > Indexes

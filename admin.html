@@ -128,22 +128,31 @@
         let adminUsers = [];
 
         async function loadAdmin() {
-            const user = await requireAuth();
-            if (!user) return;
+            try {
+                const user = await requireAuth();
+                if (!user) return;
 
-            const admin = await isAdmin(user);
-            if (!admin) {
+                const admin = await isAdmin(user);
+                if (!admin) {
+                    document.getElementById('flash').innerHTML =
+                        '<div class="flash error">Acesso negado. Apenas o administrador pode acessar esta página.</div>';
+                    document.getElementById('adminTableBody').innerHTML = '';
+                    document.getElementById('pendingTableBody').innerHTML = '';
+                    return;
+                }
+
+                adminUsers = await getRanking();
+                renderTable(adminUsers, user);
+                populateSelect(adminUsers);
+                loadPendingUsers();
+            } catch (err) {
                 document.getElementById('flash').innerHTML =
-                    '<div class="flash error">Acesso negado. Apenas o administrador pode acessar esta página.</div>';
-                document.getElementById('adminTableBody').innerHTML = '';
-                document.getElementById('pendingTableBody').innerHTML = '';
-                return;
+                    '<div class="flash error">Erro ao carregar painel: ' + err.message + '</div>';
+                document.getElementById('adminTableBody').innerHTML =
+                    '<tr><td colspan="4" style="padding:30px;text-align:center;color:#d9534f;">Erro: ' + err.message + '<br><small>Verifique se os índices do Firestore foram criados. Consulte firebase-rules.txt.</small></td></tr>';
+                document.getElementById('pendingTableBody').innerHTML =
+                    '<tr><td colspan="5" style="padding:20px;text-align:center;color:#d9534f;">Erro ao carregar</td></tr>';
             }
-
-            adminUsers = await getRanking();
-            renderTable(adminUsers, user);
-            populateSelect(adminUsers);
-            loadPendingUsers();
         }
 
         async function loadPendingUsers() {

@@ -116,7 +116,6 @@ async function getProfile(userId) {
 
 async function getRanking() {
     const snap = await db.collection('usuarios')
-        .where('status', '==', 'aprovado')
         .orderBy('total_score', 'desc')
         .get();
     return snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -299,9 +298,14 @@ async function requireApproved() {
 async function getPendingUsers() {
     const snap = await db.collection('usuarios')
         .where('status', '==', 'pendente')
-        .orderBy('criado_em', 'asc')
         .get();
-    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const users = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    users.sort((a, b) => {
+        const ta = a.criado_em ? a.criado_em.seconds : 0;
+        const tb = b.criado_em ? b.criado_em.seconds : 0;
+        return ta - tb;
+    });
+    return users;
 }
 
 async function approveUser(userId) {
