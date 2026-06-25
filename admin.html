@@ -116,6 +116,7 @@
                         <tr>
                             <th>Participante</th>
                             <th>Link</th>
+                            <th class="td-center">Ação</th>
                         </tr>
                     </thead>
                     <tbody id="linksTableBody"></tbody>
@@ -364,15 +365,19 @@
 
             for (const item of filtered) {
                 const tr = document.createElement('tr');
+                const safeUrl = item.url.replace(/'/g, "\\'");
                 tr.innerHTML = `
                     <td style="white-space:nowrap">${item.userName}</td>
                     <td><a href="${item.url}" target="_blank" style="font-size:0.85em;word-break:break-all">${item.url}</a></td>
+                    <td class="td-center">
+                        <button class="btn btn-sm btn-warning" onclick="adminDeleteLink('${safeUrl}','${item.activityId}')" title="Remover link">&times;</button>
+                    </td>
                 `;
                 tbody.appendChild(tr);
             }
 
             if (filtered.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="2" style="padding:20px;text-align:center;color:#8a7a6a;">Nenhum link encontrado.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="3" style="padding:20px;text-align:center;color:#8a7a6a;">Nenhum link encontrado.</td></tr>';
             }
         }
 
@@ -424,6 +429,17 @@
                 }
             } catch (err) {
                 tbody.innerHTML = '<tr><td colspan="6" style="padding:20px;text-align:center;color:#d9534f;">Erro: ' + err.message + '</td></tr>';
+            }
+        }
+
+        async function adminDeleteLink(url, activityId) {
+            if (!confirm('Remover este link permanentemente?')) return;
+            try {
+                await removeLink(activityId, url);
+                showSuccess('Link removido!');
+                loadLinks();
+            } catch (err) {
+                showError(err.message);
             }
         }
 
