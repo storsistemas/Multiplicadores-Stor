@@ -1,5 +1,5 @@
 /**
- * Script de Seed — Cria o usuário administrador inicial no Firestore.
+ * Script de Seed — Cria/atualiza documentos na coleção /usuarios.
  *
  * Uso:
  *   1. Baixe a chave privada do Firebase:
@@ -8,13 +8,14 @@
  *      na raiz do projeto (já está no .gitignore)
  *
  *   2. Instale as dependências:
- *      npm install firebase-admin
+ *      cd scripts && npm install
  *
  *   3. Execute:
  *      node scripts/seed-admin.js
  *
- *   Isso criará/atualizará o documento do admin em /usuarios/{uid}
- *   com role: "admin" e status: "aprovado".
+ *   Flags:
+ *     --migrate   Copia dados da coleção "profiles" para "usuarios"
+ *                 (para usuários que já existiam antes da migração)
  */
 
 const admin = require("firebase-admin");
@@ -30,14 +31,14 @@ const db = admin.firestore();
 const auth = admin.auth();
 
 const ADMIN_EMAIL = "brayan@storsistemas.com.br";
+const shouldMigrate = process.argv.includes("--migrate");
 
 async function seed() {
   try {
-    // Busca o usuário pelo e-mail no Authentication
+    // 1. Cria/atualiza o admin
     const user = await auth.getUserByEmail(ADMIN_EMAIL);
     const uid = user.uid;
 
-    // Cria ou atualiza o documento em /usuarios/{uid}
     await db.collection("usuarios").doc(uid).set(
       {
         nome: user.displayName || "Administrador",
@@ -52,8 +53,41 @@ async function seed() {
       { merge: true }
     );
 
-    console.log(`✅ Admin "${ADMIN_EMAIL}" (${uid}) criado/atualizado com sucesso!`);
-    console.log("   → role: admin, status: aprovado");
+    console.log(`✅ Admin "${ADMIN_EMAIL}" (${uid}) — role: admin, status: aprovado`);
+
+    // 2. Se --migrate, copia profiles → usuarios para todos os Auth users
+    if (shouldMigrate) {
+      console.log("\n🔄 Migrando profiles → usuarios...");
+      const list = await auth.listUsers();
+      const profilesSnap = await db.collection("profiles").get();
+      const profiles = {};
+      profilesSnap.docs.forEach((d) => {
+        profiles[d.id] = d.data();
+      });
+
+      let count = 0;
+      for (const u of list.users) {
+        const docRef = db.collection("usuarios").doc(u.uid);
+        const existing = await docRef.get();
+        if (existing.exists) continue; // já migrado
+
+        const p = profiles[u.uid];
+        await docRef.set({
+          nome: p?.name || u.displayName || u.email || "Usuário",
+          email: u.email || "",
+          role: u.email === ADMIN_EMAIL ? "admin" : "colaborador",
+          status: "aprovado",
+          total_score: p?.total_score || 0,
+          criado_em: p?.created_at || admin.firestore.FieldValue.serverTimestamp(),
+          aprovado_em: admin.firestore.FieldValue.serverTimestamp(),
+          aprovado_por: "seed-migration",
+        });
+        count++;
+      }
+      console.log(`✅ ${count} usuários migrados de "profiles" para "usuarios"`);
+    }
+
+    console.log("\n✅ Seed concluído!");
     process.exit(0);
   } catch (err) {
     if (err.code === "auth/user-not-found") {

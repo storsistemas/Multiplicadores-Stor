@@ -45,10 +45,11 @@ const GRUPOS = [
 
 async function register(name, email, password) {
     const cred = await auth.createUserWithEmailAndPassword(email, password);
+    const isAdminUser = email === ADMIN_EMAIL;
     await db.collection('usuarios').doc(cred.user.uid).set({
         nome: name,
         email: email,
-        role: 'colaborador',
+        role: isAdminUser ? 'admin' : 'colaborador',
         status: 'pendente',
         total_score: 0,
         criado_em: firebase.firestore.FieldValue.serverTimestamp(),
