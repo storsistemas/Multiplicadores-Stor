@@ -102,12 +102,17 @@
                 return;
             }
 
+            const estudosConcluido = grupos
+                .filter(g => g.type === 'concluir_estudos')
+                .some(g => g.steps.some(s => s.completed));
+
             for (const grupo of grupos) {
                 const s = grupo.steps[0];
                 if (!s) continue;
                 const done = s.completed;
+                const isMaterialLocked = grupo.type === 'iniciar_material' && !done && !estudosConcluido;
                 const div = document.createElement('div');
-                div.className = 'activity-item' + (done ? ' completed' : '');
+                div.className = 'activity-item' + (done ? ' completed' : '') + (isMaterialLocked ? ' locked' : '');
 
                 let html = `<div class="title">${getSealIcon(grupo.type, done)} ${grupo.label}</div>`;
 
@@ -154,28 +159,35 @@
                     </div>`;
 
                 } else if (grupo.type === 'iniciar_material') {
-                    const allLinks = s.links || (s.link ? [s.link] : []);
-                    let linksHtml = '';
-                    for (const url of allLinks) {
-                        linksHtml += '<div style="margin:2px 0"><a href="' + url + '" target="_blank" style="font-size:0.85em;word-break:break-all">' + url + '</a></div>';
+                    const locked = !done && !estudosConcluido;
+                    if (locked) {
+                        html += `<div class="meta" style="color:#8a7a6a;">
+                            <em>&#x1F512; Complete "Concluir Fase de Estudo" primeiro</em>
+                        </div>`;
+                    } else {
+                        const allLinks = s.links || (s.link ? [s.link] : []);
+                        let linksHtml = '';
+                        for (const url of allLinks) {
+                            linksHtml += '<div style="margin:2px 0"><a href="' + url + '" target="_blank" style="font-size:0.85em;word-break:break-all">' + url + '</a></div>';
+                        }
+                        html += `<div class="meta">
+                            <form class="meta-row" onsubmit="return handleToggle(event, '${s.id}', 'iniciar_material')">
+                                ${!done
+                                    ? `<input type="date" name="data_inicio" class="inline-input" required>
+                                       <button type="submit" class="btn btn-success btn-sm">Iniciar</button>`
+                                    : `<strong>Data de início:</strong> ${s.data_inicio || '-'}
+                                       <button type="submit" class="btn btn-warning btn-sm">Desfazer</button>`}
+                            </form>
+                        </div>
+                        <div class="link-info">
+                            <strong>Links do Material</strong>
+                            ${linksHtml}
+                            <form class="meta-row" onsubmit="return handleLink(event, '${s.id}')" style="margin-top:4px">
+                                <input type="url" name="link" class="inline-input" placeholder="URL do material" style="width:280px" required>
+                                <button type="submit" class="btn btn-primary btn-sm">Adicionar Link</button>
+                            </form>
+                        </div>`;
                     }
-                    html += `<div class="meta">
-                        <form class="meta-row" onsubmit="return handleToggle(event, '${s.id}', 'iniciar_material')">
-                            ${!done
-                                ? `<input type="date" name="data_inicio" class="inline-input" required>
-                                   <button type="submit" class="btn btn-success btn-sm">Iniciar</button>`
-                                : `<strong>Data de início:</strong> ${s.data_inicio || '-'}
-                                   <button type="submit" class="btn btn-warning btn-sm">Desfazer</button>`}
-                        </form>
-                    </div>
-                    <div class="link-info">
-                        <strong>Links do Material</strong>
-                        ${linksHtml}
-                        <form class="meta-row" onsubmit="return handleLink(event, '${s.id}')" style="margin-top:4px">
-                            <input type="url" name="link" class="inline-input" placeholder="URL do material" style="width:280px" required>
-                            <button type="submit" class="btn btn-primary btn-sm">Adicionar Link</button>
-                        </form>
-                    </div>`;
 
 
 

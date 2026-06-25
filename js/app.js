@@ -288,6 +288,25 @@ async function adminAssignActivity(userId, activityType, xpAmount) {
     await recalcScore(userId);
 }
 
+// ============ ADMIN ACTIVITIES ============
+
+async function adminGetUserActivities(userId) {
+    const snap = await activitiesRef()
+        .where('user_id', '==', userId)
+        .get();
+    const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    return GRUPOS.map(g => ({
+        ...g,
+        steps: g.steps.map(t => data.find(d => d.activity_type === t)).filter(Boolean),
+    })).filter(g => g.steps.length > 0);
+}
+
+async function adminToggleActivity(activityId, completed, userId, activityType) {
+    const pontos = completed ? (PONTOS[activityType] || 0) : 0;
+    await activitiesRef().doc(activityId).update({ completed, pontos });
+    await recalcScore(userId);
+}
+
 // ============ APPROVAL ============
 
 async function requireApproved() {

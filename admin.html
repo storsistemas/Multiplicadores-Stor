@@ -122,6 +122,33 @@
                 </table>
             </div>
         </div>
+
+        <div class="card">
+            <h3>&#x1F9F0; Gerenciar Missões dos Participantes</h3>
+            <div class="form-group" style="max-width:300px;">
+                <label>Participante</label>
+                <select id="missionUser" onchange="loadUserMissions()">
+                    <option value="">Selecione...</option>
+                </select>
+            </div>
+            <div style="overflow-x:auto;margin-top:10px;">
+                <table class="admin-table" id="missionsTable">
+                    <thead>
+                        <tr>
+                            <th>Missão</th>
+                            <th class="td-center">Status</th>
+                            <th>Data Início</th>
+                            <th>Data Término</th>
+                            <th>Módulo</th>
+                            <th class="td-center">Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="missionsBody">
+                        <tr><td colspan="6" style="padding:20px;text-align:center;color:#8a7a6a;">Selecione um participante acima.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -144,6 +171,7 @@
                 adminUsers = await getRanking();
                 renderTable(adminUsers, user);
                 populateSelect(adminUsers);
+                populateMissionSelect(adminUsers);
                 loadPendingUsers();
             } catch (err) {
                 document.getElementById('flash').innerHTML =
@@ -345,6 +373,68 @@
 
             if (filtered.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="2" style="padding:20px;text-align:center;color:#8a7a6a;">Nenhum link encontrado.</td></tr>';
+            }
+        }
+
+        function populateMissionSelect(users) {
+            const sel = document.getElementById('missionUser');
+            sel.innerHTML = '<option value="">Selecione...</option>';
+            for (const u of users) {
+                const opt = document.createElement('option');
+                opt.value = u.id;
+                opt.textContent = u.nome + ' (' + u.total_score + ' XP)';
+                sel.appendChild(opt);
+            }
+        }
+
+        async function loadUserMissions() {
+            const userId = document.getElementById('missionUser').value;
+            const tbody = document.getElementById('missionsBody');
+            if (!userId) {
+                tbody.innerHTML = '<tr><td colspan="6" style="padding:20px;text-align:center;color:#8a7a6a;">Selecione um participante acima.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = '<tr><td colspan="6" style="padding:20px;text-align:center;color:#8a7a6a;">Carregando...</td></tr>';
+            try {
+                const grupos = await adminGetUserActivities(userId);
+                if (grupos.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="padding:20px;text-align:center;color:#8a7a6a;">Nenhuma missão encontrada.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = '';
+                for (const grupo of grupos) {
+                    const s = grupo.steps[0];
+                    if (!s) continue;
+                    const tr = document.createElement('tr');
+                    const done = s.completed;
+                    const actLabel = ATIVIDADES.find(a => a.type === grupo.type)?.label || grupo.label;
+                    tr.innerHTML = `
+                        <td>${actLabel}</td>
+                        <td class="td-center">${done ? '<span class="badge badge-success">Concluído</span>' : '<span class="badge badge-warning">Pendente</span>'}</td>
+                        <td style="font-size:0.85em;">${s.data_inicio || '-'}</td>
+                        <td style="font-size:0.85em;">${s.data_termino || '-'}</td>
+                        <td style="font-size:0.85em;">${s.modulo || '-'}</td>
+                        <td class="td-center">
+                            <button class="btn btn-sm ${done ? 'btn-warning' : 'btn-success'}" onclick="toggleMission('${s.id}', ${!done}, '${userId}', '${grupo.type}')">
+                                ${done ? '&#x21A9; Desfazer' : '&#x2713; Concluir'}
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                }
+            } catch (err) {
+                tbody.innerHTML = '<tr><td colspan="6" style="padding:20px;text-align:center;color:#d9534f;">Erro: ' + err.message + '</td></tr>';
+            }
+        }
+
+        async function toggleMission(activityId, completed, userId, activityType) {
+            try {
+                await adminToggleActivity(activityId, completed, userId, activityType);
+                showSuccess(completed ? 'Missão concluída!' : 'Missão desfeita!');
+                loadUserMissions();
+                loadAdmin();
+            } catch (err) {
+                showError(err.message);
             }
         }
 
